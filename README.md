@@ -11,6 +11,28 @@ A fast window switcher for macOS — a replacement-grade alternative to the buil
 - **Settings window** — via Dock icon click, the menu-bar icon, or Cmd-, — with a trigger-modifier picker, live permission status, and launch-at-login.
 - Esc cancels, ↑/↓ move, Enter confirms, clicking a row jumps straight to it.
 
+## Install
+
+### Homebrew (tap)
+
+```sh
+brew install --cask kartikssj/alter/alter
+```
+
+Alter is not yet signed with an Apple Developer ID certificate, so Gatekeeper
+will block the first launch ("cannot be opened because the developer cannot be
+verified"). Either right-click the app → **Open** once, or skip that entirely:
+
+```sh
+brew install --cask kartikssj/alter/alter --no-quarantine
+```
+
+### Manual download
+
+Grab `Alter-<version>.zip` from
+[GitHub Releases](https://github.com/kartikssj/alter/releases), unzip, move
+`Alter.app` to `/Applications`, then right-click → **Open** on first launch.
+
 ## Requirements
 
 - macOS 14+, Apple Silicon or Intel.

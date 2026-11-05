@@ -10,9 +10,15 @@ macOS window switcher app (Swift, AppKit + SwiftUI views, zero third-party depen
 
 - `make build` — xcodebuild, Debug, into `build/`. Must end with `BUILD SUCCEEDED`.
 - `make run` — build + `open` the app. `make clean` wipes `build/`.
+- `make release` — Release build into `build/`, zip into `dist/Alter-<version>.zip` + SHA-256. **Must pass `-destination 'generic/platform=macOS'`** or xcodebuild 26 picks "My Mac (arm64)" and silently ships an arm64-only binary (verified: `lipo -info` must show `x86_64 arm64`). Version comes from `MARKETING_VERSION` in the pbxproj (bump there, tag `v<version>`).
+- `make cask` — prints the Homebrew cask stanza (version + sha256 filled from the dist zip) for the `kartikssj/homebrew-alter` tap repo (`Casks/alter.rb`).
 - No test target. Verification is manual: press the hotkey, check the panel, confirm a switch happens.
 - **LSP noise**: SourceKit reports bogus "cannot find X in scope" cross-file errors until a build indexes the project. Trust `make build`, not editor diagnostics.
 - **Do not** revert to a SwiftUI `Settings` scene for the settings window: its `showSettingsWindow:` action reported handled but never materialized a window on macOS 15/Xcode 26. The self-managed `NSWindow` in `AppDelegate.showSettings()` is deliberate.
+
+## Release signing
+
+Debug is signed "Apple Development" (TCC-stable for local dev). Release is **ad-hoc on purpose**: the Apple Development cert in the keychain is tied to an employer team — do NOT ship release binaries signed with it. When a personal Developer ID exists: flip Release config per the comment block in the Makefile (identity, team, hardened runtime), then `notarytool submit --wait` + `stapler staple` + re-zip.
 
 ## Project layout
 
@@ -49,6 +55,7 @@ CGEventTap (HotkeyMonitor)
 4. **Ad-hoc signing invalidates TCC grants on every rebuild.** Keep the Apple Development identity (`CODE_SIGN_IDENTITY`, `DEVELOPMENT_TEAM = 29DC9FRNK7` in the pbxproj). If the user reports re-prompts every build, check this first.
 5. If codesign hangs during build, it's a keychain prompt/lock — `security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db` fixes it (asks user password).
 6. CG↔AX window matching: exact CGWindowID first via the private-but-stable `_AXUIElementGetWindow` (same symbol AltTab/Amethyst use), falling back to title then bounds heuristics. Keep the fallback — the symbol is undocumented. Bounds of minimized windows can be stale — don't make heuristic matching stricter without handling that.
+7. **Icon doesn't update in Dock/Finder after changing the asset catalog** — it's the LaunchServices cache, not the build: `touch` the built .app, `lsregister -f <app path>`, then `killall Dock; killall Finder`.
 
 ## Known limitations (documented in README too)
 

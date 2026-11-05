@@ -138,6 +138,8 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kartiku.alter;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				DEVELOPMENT_TEAM = 29DC9FRNK7;
@@ -149,8 +151,13 @@
 		A17E5000000000000000000D /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
-				CODE_SIGN_IDENTITY = "Apple Development";
-				CODE_SIGN_STYLE = Automatic;
+				// Ad-hoc for now: distribute unsigned until a personal Developer ID
+				// certificate exists (the Apple Development cert used for Debug is
+				// tied to an employer team and must not ship in release binaries).
+				// To switch to Developer ID + notarization, see the Makefile notes.
+				CODE_SIGN_IDENTITY = "-";
+				CODE_SIGN_STYLE = Manual;
+				ARCHS = "arm64 x86_64";
 				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				COMBINE_HIDPI_IMAGES = YES;
 				INFOPLIST_FILE = Info.plist;
@@ -159,9 +166,11 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
+				MARKETING_VERSION = 0.1.0;
+				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kartiku.alter;
 				PRODUCT_NAME = "$(TARGET_NAME)";
-				DEVELOPMENT_TEAM = 29DC9FRNK7;
+				PROVISIONING_PROFILE_SPECIFIER = "";
 				SDKROOT = macosx;
 				SWIFT_VERSION = 5.0;
 			};
