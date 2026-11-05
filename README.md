@@ -13,25 +13,13 @@ A fast window switcher for macOS — a replacement-grade alternative to the buil
 
 ## Install
 
-### Homebrew (tap)
-
-```sh
-brew install --cask kartikssj/alter/alter
-```
+Grab `Alter-<version>.zip` from
+[GitHub Releases](https://github.com/kartikssj/alter/releases), unzip, and move
+`Alter.app` to `/Applications`.
 
 Alter is not yet signed with an Apple Developer ID certificate, so Gatekeeper
 will block the first launch ("cannot be opened because the developer cannot be
-verified"). Either right-click the app → **Open** once, or skip that entirely:
-
-```sh
-brew install --cask kartikssj/alter/alter --no-quarantine
-```
-
-### Manual download
-
-Grab `Alter-<version>.zip` from
-[GitHub Releases](https://github.com/kartikssj/alter/releases), unzip, move
-`Alter.app` to `/Applications`, then right-click → **Open** on first launch.
+verified"). Right-click the app → **Open** once to bypass it permanently.
 
 ## Requirements
 
