@@ -1,0 +1,120 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Silkscreen';
+    src: url('fonts/silkscreen-400.woff2') format('woff2');
+    font-weight: 400; font-display: block;
+  }
+  @font-face {
+    font-family: 'Silkscreen';
+    src: url('fonts/silkscreen-700.woff2') format('woff2');
+    font-weight: 700; font-display: block;
+  }
+
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { font-family: 'Silkscreen', monospace; font-size: 13px; color: #000; }
+
+  /* Win95 raised panel */
+  #win {
+    display: flex; flex-direction: column; height: 100%; box-sizing: border-box;
+    background: #c0c0c0; padding: 2px;
+    border-top: 2px solid #dfdfdf; border-left: 2px solid #dfdfdf;
+    border-bottom: 2px solid #0a0a0a; border-right: 2px solid #0a0a0a;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff;
+  }
+
+  /* title bar */
+  #titlebar {
+    flex: none; display: flex; align-items: center; gap: 6px;
+    padding: 3px 4px 3px 6px; margin: 1px;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #fff; font-weight: 700; font-size: 12px; letter-spacing: 0.5px;
+  }
+  #titlebar .caption { flex: 1; white-space: nowrap; overflow: hidden; }
+  .tbtn {
+    flex: none; width: 16px; height: 14px; background: #c0c0c0; color: #000;
+    font-size: 10px; line-height: 12px; text-align: center; font-weight: 700;
+    border-top: 1px solid #fff; border-left: 1px solid #fff;
+    border-bottom: 1px solid #0a0a0a; border-right: 1px solid #0a0a0a;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #dfdfdf;
+  }
+
+  /* menu bar (decorative) */
+  #menubar { flex: none; display: flex; gap: 14px; padding: 4px 8px; font-size: 12px; }
+  #menubar span u { text-decoration: underline; }
+
+  /* inset listbox */
+  #list {
+    flex: 1; overflow-y: auto; margin: 2px 4px; padding: 2px;
+    background: #ffffff;
+    border-top: 2px solid #404040; border-left: 2px solid #404040;
+    border-bottom: 2px solid #ffffff; border-right: 2px solid #ffffff;
+    box-shadow: inset -1px -1px 0 #dfdfdf, inset 1px 1px 0 #808080;
+  }
+  .row { display: flex; align-items: center; gap: 8px; padding: 3px 6px;
+         white-space: nowrap; cursor: default; }
+  .row img { flex: none; width: 22px; height: 22px; image-rendering: pixelated; }
+  .row .app { font-weight: 700; }
+  .row .title { font-weight: 400; color: #404040; overflow: hidden; text-overflow: ellipsis; }
+  .row.sel { background: #000080; color: #fff; }
+  .row.sel .title { color: #c0c0c0; }
+  .row.min img { opacity: 0.5; }
+  .row.min .app::after { content: ' (minimized)'; font-weight: 400; font-style: italic; }
+
+  /* status bar */
+  #status { flex: none; display: flex; gap: 4px; padding: 2px 4px 3px; }
+  .field {
+    padding: 2px 8px; font-size: 11px;
+    border-top: 1px solid #808080; border-left: 1px solid #808080;
+    border-bottom: 1px solid #ffffff; border-right: 1px solid #ffffff;
+  }
+  .field.grow { flex: 1; }
+</style>
+</head>
+<body>
+<div id="win">
+  <div id="titlebar">
+    <span class="caption">Alter — Task Switcher</span>
+    <span class="tbtn">_</span><span class="tbtn">□</span><span class="tbtn">✕</span>
+  </div>
+  <div id="menubar"><span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>V</u>iew</span><span><u>H</u>elp</span></div>
+  <div id="list"></div>
+  <div id="status">
+    <span class="field grow" id="count"></span>
+    <span class="field">Ready</span>
+  </div>
+</div>
+<script>
+  var list = document.getElementById('list');
+  var count = document.getElementById('count');
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function render(state) {
+    var html = '';
+    state.windows.forEach(function (w, i) {
+      html += '<div class="row' + (w.selected ? ' sel' : '') + (w.isMinimized ? ' min' : '') + '" data-i="' + i + '">'
+        + '<img src="' + w.iconUrl + '" alt="">'
+        + '<span class="app">' + esc(w.appName) + '</span>'
+        + (w.title ? '<span class="title">— ' + esc(w.title) + '</span>' : '')
+        + '</div>';
+    });
+    list.innerHTML = html;
+    Array.prototype.forEach.call(list.children, function (row) {
+      row.addEventListener('click', function () {
+        window.alter.confirm(parseInt(row.dataset.i, 10));
+      });
+    });
+    var sel = list.querySelector('.sel');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+
+    count.textContent = state.windows.length + ' window(s) — ' + (state.selectedIndex + 1) + ' selected';
+  }
+
+  window.alter.onUpdate(render);
+</script>
+</body>
+</html>

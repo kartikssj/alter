@@ -40,10 +40,14 @@ final class WindowCatalog {
     /// - screen: when set, only windows intersecting that display are listed.
     ///   Note: minimized windows carry stale (pre-minimize) bounds, so they
     ///   stay listed on the display they were minimized from.
+    /// - excludingWindowIDs: window IDs to drop. Alter's own windows (Settings,
+    ///   permission onboarding) ARE listed — only the switcher panels
+    ///   themselves are excluded, by ID, so the panel never lists itself.
     func currentWindows(
         frontAppScope: SettingsStore.FrontAppScope?,
         limitTo screen: NSScreen?,
-        recency: AppRecencyTracker
+        recency: AppRecencyTracker,
+        excludingWindowIDs: Set<CGWindowID>
     ) -> [WindowEntry] {
         // Two queries: optionOnScreenOnly gives true front-to-back z-order
         // (optionAll does NOT — its order is effectively creation order, which
@@ -65,7 +69,6 @@ final class WindowCatalog {
             list.append(dict)
         }
 
-        let ownPID = ProcessInfo.processInfo.processIdentifier
         let frontApp = NSWorkspace.shared.frontmostApplication
         let frontPID = frontApp?.processIdentifier
         let frontKey = frontApp.map { AppRecencyTracker.key(for: $0) }
@@ -78,8 +81,8 @@ final class WindowCatalog {
         for (index, dict) in list.enumerated() {
             guard (dict[kCGWindowLayer as String] as? NSNumber)?.intValue == 0,
                   let pid = (dict[kCGWindowOwnerPID as String] as? NSNumber)?.int32Value,
-                  pid != ownPID,
                   let windowID = (dict[kCGWindowNumber as String] as? NSNumber)?.uint32Value,
+                  !excludingWindowIDs.contains(windowID),
                   let boundsDict = dict[kCGWindowBounds as String] as? [String: Any],
                   let bounds = CGRect(dictionaryRepresentation: boundsDict as CFDictionary)
             else { continue }

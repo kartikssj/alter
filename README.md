@@ -47,6 +47,126 @@ The app is signed with an Apple Development certificate (configured in the targe
 - If Alter hangs or quits, macOS disables its event tap and the native switcher automatically works again — Cmd-Tab is never left dead.
 - Inside secure password fields, event taps are blocked by macOS, so the shortcut briefly reverts to native behavior.
 
+## Custom themes (experimental)
+
+The switcher's look is fully customizable with plain HTML/CSS/JS. Theming is
+**opt-in**: the built-in UI stays the default, and is also the automatic
+fallback if a theme is missing, fails to load, or throws a JS error.
+
+Enable: Settings → Appearance → Switcher theme. "Reveal Themes Folder…" opens
+the theme directory, `~/Library/Application Support/Alter/Themes/`.
+
+A theme is a folder in that directory:
+
+```
+Themes/my-theme/
+  index.html   (required)
+  theme.json   (optional manifest)
+  ...any CSS/JS/assets, referenced relatively
+```
+
+```json
+// theme.json
+{
+  "name": "My Theme",
+  "author": "you",
+  "size": "auto"                 // or { "width": 640, "height": 400 }
+}
+```
+
+With `"size": "auto"`, call `alter.autoResize()` once and the panel fits
+itself to your content; otherwise the manifest size (or the `alter.resize(w,
+h)` message) drives the panel size. Themed mode shows on the pointer's
+display only (the built-in UI keeps its per-display clones).
+
+### The bridge
+
+Alter pushes state as JSON whenever anything changes (selection moves are
+just another update):
+
+```js
+window.alter.onUpdate(function (state) {
+  // state = {
+  //   windows: [{ id, pid, appName, title,
+  //               bounds: { x, y, w, h },   // Quartz coords (top-left origin)
+  //               isMinimized, selected, iconUrl, shotUrl }],
+  //   selectedIndex, mode: "allWindows" | "frontApp", previewsEnabled
+  // }
+  render(state);
+});
+```
+
+Report interactions back:
+
+```js
+alter.select(i);   // move the highlight
+alter.confirm(i);  // click semantics: select + switch to that window
+alter.resize(w, h);
+```
+
+`iconUrl` (`alter-icon://<pid>`) and `shotUrl` (`alter-shot://<windowId>?maxw=N`)
+are plain `<img src>` URLs. Shots fail when a window is minimized or Screen
+Recording is off — handle `img.onerror` and fall back to `iconUrl` (or use
+the tag library, which does it for you).
+
+### Tag library (optional)
+
+```html
+<script src="alter-lib://alter-elements.js"></script>
+```
+
+defines custom elements so simple themes need no rendering JS:
+
+- `<al-list>` — the window list. Style via `::part(row)`, `::part(row-selected)`,
+  `::part(icon)`, `::part(app-name)`, `::part(title)`; custom properties
+  `--al-icon-size`, `--al-selection`, `--al-selection-fg`. Clicking a row
+  confirms it.
+- `<al-icon for="selected">` — an app icon (`for` = window index or `selected`).
+- `<al-shot for="selected" maxw="800">` — a live window screenshot with
+  automatic icon fallback.
+- `<al-preview>` — the selected window's shot; hides itself when previews are
+  disabled (mirrors the built-in behavior).
+
+### Sample themes
+
+Ten showcase themes ship in `Themes/` (fonts are bundled, SIL OFL — license
+files included per theme):
+
+- `coder/` — IDE/terminal look: line numbers, `❯` caret + blinking cursor,
+  traffic-light header, preview in a split-editor pane.
+- `retro-gaming/` — phosphor CRT: scanlines, pixel font, `▶` selection marker,
+  pixelated screenshots.
+- `fantasy/` — illuminated parchment scroll (light): Cinzel + IM Fell English,
+  `❧` ornaments, wax-seal selection, framed-painting preview.
+- `techno/` — neon HUD: notched corners, grid background, scanline sweep,
+  glowing cyan/magenta.
+- `nineties/` — Windows 95: gray bevels, gradient title bar, navy listbox
+  selection, status bar, no preview (authentic).
+- `cherry-blossom/` — sakura spring (light): falling petals, soft pink cards,
+  Zen Maru Gothic.
+- `book/` — an open book spread (light): spine crease, EB Garamond + Playfair
+  Display, drop-cap + bookmark-ribbon selection, roman-numeral folio, preview
+  as the illustration plate on the right page.
+- `cats/` — cat café (light): the card has ears, paw-print bullets, tabby
+  selection with wiggle, Baloo 2.
+- `moto/` — race leaderboard (dark): carbon weave, P1…Pn positions, Ducati-red
+  selection, checkered-flag strip, helmet-visor preview.
+- `rainbow/` — gradient celebration (dark): animated rainbow ring (conic
+  `@property`), golden-angle hue accent per row, Fredoka + Quicksand.
+
+To try one: copy it into the themes folder and pick it in Settings, or run
+from the repo with env overrides (launch the binary directly — `make run`'s
+`open` doesn't forward them):
+`ALTER_THEMES_DIR=$PWD/Themes ALTER_THEME=techno build/Build/Products/Debug/Alter.app/Contents/MacOS/Alter`
+
+### Constraints (by design)
+
+- Themes are **local-only**: network loads (http/https, including `fetch()`)
+  are blocked; navigation is confined to the theme folder and `alter-*` URLs.
+- Themes control **look-and-feel only**. Keyboard handling (Tab/backtick
+  cycling, release-to-confirm, Esc, arrows, Enter) is always native.
+- No persistent web storage; each show starts from a fresh push of state.
+
 ## Known limitations
 
 - Windows on **other Spaces** are not listed (reliably switching Spaces requires private SkyLight APIs).
