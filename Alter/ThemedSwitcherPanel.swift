@@ -5,8 +5,8 @@ import WebKit
 /// locked-down WKWebView that renders the user's HTML/JS theme. Unlike the
 /// native panel set there is exactly one instance, created when the theme is
 /// selected (so the WebContent cold start never hits summon latency) and
-/// reused across shows; it appears on the pointer's screen only (see
-/// docs/plans/webkit.md, decision 2).
+/// reused across shows; it appears on the pointer's screen only (one webview;
+/// native panels keep per-screen clones).
 ///
 /// Invariants carried over from SwitcherPanel: borderless +
 /// .nonactivatingPanel + floating + canJoinAllSpaces; all keyboard input stays
