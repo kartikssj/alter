@@ -3,7 +3,7 @@
 A fast window switcher for macOS — a replacement-grade alternative to the built-in Cmd-Tab, showing a centered list of windows (app icon + app name + window title), including minimized windows.
 
 <p align="center">
-  <img src="https://github.com/user-attachments/assets/45144f66-6659-4155-99f4-aba33a23702d" alt="Alter switcher with the built-in UI" width="760">
+  <img width="1204" height="483" alt="native" src="https://github.com/user-attachments/assets/9e7589a1-960c-4a9a-be59-ee77c7a15ae3" />
 </p>
 
 ## Features
