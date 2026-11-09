@@ -49,9 +49,36 @@ final class SettingsStore {
         }
     }
 
+    enum PreviewSize: String, CaseIterable, Identifiable {
+        case small
+        case medium
+        case large
+
+        var id: String { rawValue }
+
+        var title: String {
+            switch self {
+            case .small: return "Small"
+            case .medium: return "Medium"
+            case .large: return "Large"
+            }
+        }
+
+        /// Pane dimensions in points; captures are made at 2x for Retina.
+        var paneSize: CGSize {
+            switch self {
+            case .small: return CGSize(width: 340, height: 260)
+            case .medium: return CGSize(width: 460, height: 340)
+            case .large: return CGSize(width: 600, height: 420)
+            }
+        }
+    }
+
     private(set) var triggerModifier: TriggerModifier
     private(set) var windowScope: WindowScope
     private(set) var frontAppScope: FrontAppScope
+    private(set) var showWindowPreviews: Bool
+    private(set) var previewSize: PreviewSize
     var onTriggerModifierChange: ((TriggerModifier) -> Void)?
 
     init() {
@@ -59,6 +86,8 @@ final class SettingsStore {
         triggerModifier = TriggerModifier(rawValue: defaults.string(forKey: Self.triggerModifierKey) ?? "") ?? .option
         windowScope = WindowScope(rawValue: defaults.string(forKey: Self.windowScopeKey) ?? "") ?? .allDisplays
         frontAppScope = FrontAppScope(rawValue: defaults.string(forKey: Self.frontAppScopeKey) ?? "") ?? .allProcesses
+        showWindowPreviews = defaults.object(forKey: Self.showWindowPreviewsKey) as? Bool ?? true
+        previewSize = PreviewSize(rawValue: defaults.string(forKey: Self.previewSizeKey) ?? "") ?? .small
     }
 
     func setTriggerModifier(_ value: TriggerModifier) {
@@ -80,7 +109,21 @@ final class SettingsStore {
         UserDefaults.standard.set(value.rawValue, forKey: Self.frontAppScopeKey)
     }
 
+    func setShowWindowPreviews(_ value: Bool) {
+        guard value != showWindowPreviews else { return }
+        showWindowPreviews = value
+        UserDefaults.standard.set(value, forKey: Self.showWindowPreviewsKey)
+    }
+
+    func setPreviewSize(_ value: PreviewSize) {
+        guard value != previewSize else { return }
+        previewSize = value
+        UserDefaults.standard.set(value.rawValue, forKey: Self.previewSizeKey)
+    }
+
     private static let triggerModifierKey = "triggerModifier"
     private static let windowScopeKey = "windowScope"
     private static let frontAppScopeKey = "frontAppScope"
+    private static let showWindowPreviewsKey = "showWindowPreviews"
+    private static let previewSizeKey = "previewSize"
 }

@@ -7,6 +7,7 @@ final class SwitcherCoordinator {
     private let recency = AppRecencyTracker()
     private let hotkeys = HotkeyMonitor()
     private let viewModel = SwitcherViewModel()
+    private let thumbnailer = WindowThumbnailer()
     private let settings: SettingsStore
 
     init(settings: SettingsStore) {
@@ -95,13 +96,28 @@ final class SwitcherCoordinator {
             recency: recency
         )
         guard !entries.isEmpty else { return }
-        viewModel.configure(windows: entries, mode: mode)
+        let previewSize = settings.previewSize.paneSize
+        let showPreview = settings.showWindowPreviews && Permissions.hasScreenRecording
+        viewModel.configure(windows: entries, mode: mode, showPreview: showPreview, previewPaneSize: previewSize)
         isVisible = true
         hotkeys.isSwitcherVisible = true
         if let screen {
             panel.show(on: screen)
         } else {
             panel.show()
+        }
+        if showPreview {
+            let ids = entries.map(\.id)
+            let priority = viewModel.selectedWindow?.id
+            // Capture at 2x the pane size for Retina sharpness.
+            let maxPixels = CGSize(width: previewSize.width * 2, height: previewSize.height * 2)
+            Task {
+                await thumbnailer.beginSession()
+                thumbnailer.prefetch(ids: ids, priority: priority, maxPixelSize: maxPixels) { [weak self] id, image in
+                    guard let self, self.isVisible, let image else { return }
+                    self.viewModel.setThumbnail(image, for: id)
+                }
+            }
         }
     }
 
@@ -122,6 +138,7 @@ final class SwitcherCoordinator {
     }
 
     private func dismiss() {
+        thumbnailer.endSession()
         isVisible = false
         hotkeys.isSwitcherVisible = false
         panel.hide()
@@ -171,7 +188,7 @@ private struct PermissionView: View {
             Text("Alter intercepts its global shortcut (\u{2325}\u{21E5} or \u{2318}\u{21E5}, configurable) to show the window switcher, and uses the Accessibility API to focus windows. Grant access in System Settings — Alter will continue automatically once granted.")
                 .font(.body)
                 .fixedSize(horizontal: false, vertical: true)
-            Text("Optional: also allow Screen Recording so other apps' window titles can be shown.")
+            Text("Optional: also allow Screen Recording so other apps' window titles and previews can be shown.")
                 .font(.callout)
                 .foregroundStyle(.secondary)
                 .fixedSize(horizontal: false, vertical: true)
