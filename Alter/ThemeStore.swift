@@ -6,7 +6,7 @@ import AppKit
 /// `theme.json` manifest: `{name, author, size: "auto" | {"width", "height"}}`.
 /// Themes live in `~/Library/Application Support/Alter/Themes/<name>/`
 /// (`ALTER_THEMES_DIR` overrides for development). Theming is opt-in; the
-/// built-in SwiftUI UI is the default. See docs/plans/webkit.md for the
+/// built-in SwiftUI UI is the default. See README → Custom themes for the
 /// bridge contract themes use.
 final class ThemeStore {
     static let shared = ThemeStore()

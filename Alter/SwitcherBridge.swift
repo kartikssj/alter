@@ -6,7 +6,7 @@ import WebKit
 /// Native -> JS: `window.alter.update(stateJSON)` is evaluated whenever the
 /// observed SwitcherViewModel changes (selection moves are just another
 /// update). JS -> Native: `window.webkit.messageHandlers.alter.postMessage`
-/// with {type: select|confirm|resize|error}. See docs/plans/webkit.md.
+/// with {type: select|confirm|resize|error}. See README → Custom themes.
 ///
 /// Runtime contract: everything except the WKScriptMessageHandler entry point
 /// must be called from the main thread (same contract as WindowThumbnailer —
