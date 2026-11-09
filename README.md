@@ -2,6 +2,10 @@
 
 A fast window switcher for macOS — a replacement-grade alternative to the built-in Cmd-Tab, showing a centered list of windows (app icon + app name + window title), including minimized windows.
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/45144f66-6659-4155-99f4-aba33a23702d" alt="Alter switcher with the built-in UI" width="760">
+</p>
+
 ## Features
 
 - **Opt-Tab** — list all on-screen and minimized windows across apps, sorted most-recently-used. Keep holding Option and tap Tab (Shift-Tab to go backwards); release Option to switch.
@@ -144,6 +148,10 @@ defines custom elements so simple themes need no rendering JS:
 Ten showcase themes ship with the app (repo: `Themes/`, fonts are bundled,
 SIL OFL — license files included per theme):
 
+<p align="center">
+  <img src="https://github.com/user-attachments/assets/f2889a0f-43af-4251-8443-f76296ae5df6" alt="The ten bundled themes, cycling" width="640">
+</p>
+
 - `coder/` — IDE/terminal look: line numbers, `❯` caret + blinking cursor,
   traffic-light header, preview in a split-editor pane.
 - `retro-gaming/` — phosphor CRT: scanlines, pixel font, `▶` selection marker,
@@ -165,6 +173,33 @@ SIL OFL — license files included per theme):
   selection, checkered-flag strip, helmet-visor preview.
 - `rainbow/` — gradient celebration (dark): animated rainbow ring (conic
   `@property`), golden-angle hue accent per row, Fredoka + Quicksand.
+
+<details>
+<summary><b>Full-size screenshots of every theme</b></summary>
+
+<table>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/e6fd7f01-88cd-45d5-bda5-24e3395adbd3" alt="Coder theme" width="420"><br><b>Coder</b></td>
+    <td><img src="https://github.com/user-attachments/assets/a3ecf072-bb90-4d1d-a911-ed62eb08c4c7" alt="Retro Gaming theme" width="420"><br><b>Retro Gaming</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/fa09f878-78f3-49e2-93c7-0e6ed8441e76" alt="Fantasy theme" width="420"><br><b>Fantasy</b></td>
+    <td><img src="https://github.com/user-attachments/assets/4e4f7e37-1301-4a81-89b6-a07e3726388f" alt="Techno theme" width="420"><br><b>Techno</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/c005b1c1-0fa8-4495-a9cc-107bf1286969" alt="90s theme" width="420"><br><b>90s</b></td>
+    <td><img src="https://github.com/user-attachments/assets/2495f041-43cb-408c-8c45-d4d189d6df42" alt="Cherry Blossom theme" width="420"><br><b>Cherry Blossom</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/739ac25f-c53d-4a88-8999-7605039c5e32" alt="Book theme" width="420"><br><b>Book</b></td>
+    <td><img src="https://github.com/user-attachments/assets/e2f2c8d9-36d8-4da0-84c7-1a4d248c8c83" alt="Cats theme" width="420"><br><b>Cats</b></td>
+  </tr>
+  <tr>
+    <td><img src="https://github.com/user-attachments/assets/8d64825c-05e5-4bf8-8f4a-0d069737704a" alt="Moto theme" width="420"><br><b>Moto</b></td>
+    <td><img src="https://github.com/user-attachments/assets/14ffa8d9-b3cb-40fc-a2cd-a5525f87eda7" alt="Rainbow theme" width="420"><br><b>Rainbow</b></td>
+  </tr>
+</table>
+</details>
 
 All ten are selectable in Settings out of the box. For theme development, run
 from the repo with env overrides (launch the binary directly — `make run`'s
