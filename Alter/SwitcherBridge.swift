@@ -105,7 +105,7 @@ final class SwitcherBridge: NSObject {
                 "isMinimized": entry.isMinimized,
                 "selected": index == viewModel.selectedIndex,
                 "iconUrl": "\(AlterSchemeHandler.iconScheme)://\(entry.pid)",
-                "shotUrl": "\(AlterSchemeHandler.shotScheme)://\(entry.id)?maxw=800",
+                "shotUrl": "\(AlterSchemeHandler.shotScheme)://\(entry.id)?maxw=1280",
             ]
         }
         let state: [String: Any] = [
