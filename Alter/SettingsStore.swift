@@ -79,7 +79,11 @@ final class SettingsStore {
     private(set) var frontAppScope: FrontAppScope
     private(set) var showWindowPreviews: Bool
     private(set) var previewSize: PreviewSize
+    /// Selected HTML/JS theme folder name; nil = built-in SwiftUI UI (the
+    /// default — theming is strictly opt-in).
+    private(set) var themeID: String?
     var onTriggerModifierChange: ((TriggerModifier) -> Void)?
+    var onThemeChange: ((String?) -> Void)?
 
     init() {
         let defaults = UserDefaults.standard
@@ -88,6 +92,12 @@ final class SettingsStore {
         frontAppScope = FrontAppScope(rawValue: defaults.string(forKey: Self.frontAppScopeKey) ?? "") ?? .allProcesses
         showWindowPreviews = defaults.object(forKey: Self.showWindowPreviewsKey) as? Bool ?? true
         previewSize = PreviewSize(rawValue: defaults.string(forKey: Self.previewSizeKey) ?? "") ?? .small
+        themeID = defaults.string(forKey: Self.themeIDKey)
+        // Development override: ALTER_THEME=example picks a theme without
+        // touching persisted settings (pair with ALTER_THEMES_DIR).
+        if let devTheme = ProcessInfo.processInfo.environment["ALTER_THEME"], !devTheme.isEmpty {
+            themeID = devTheme
+        }
     }
 
     func setTriggerModifier(_ value: TriggerModifier) {
@@ -121,9 +131,17 @@ final class SettingsStore {
         UserDefaults.standard.set(value.rawValue, forKey: Self.previewSizeKey)
     }
 
+    func setTheme(_ id: String?) {
+        guard id != themeID else { return }
+        themeID = id
+        UserDefaults.standard.set(id, forKey: Self.themeIDKey)
+        onThemeChange?(id)
+    }
+
     private static let triggerModifierKey = "triggerModifier"
     private static let windowScopeKey = "windowScope"
     private static let frontAppScopeKey = "frontAppScope"
     private static let showWindowPreviewsKey = "showWindowPreviews"
     private static let previewSizeKey = "previewSize"
+    private static let themeIDKey = "themeID"
 }

@@ -24,11 +24,19 @@ private struct GeneralSettingsTab: View {
     let settings: SettingsStore
 
     @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
+    @State private var themes: [ThemeStore.Theme] = []
 
     private var triggerBinding: Binding<SettingsStore.TriggerModifier> {
         Binding(
             get: { settings.triggerModifier },
             set: { settings.setTriggerModifier($0) }
+        )
+    }
+
+    private var themeBinding: Binding<String?> {
+        Binding(
+            get: { settings.themeID },
+            set: { settings.setTheme($0) }
         )
     }
 
@@ -47,6 +55,20 @@ private struct GeneralSettingsTab: View {
                         .foregroundStyle(.secondary)
                 }
             }
+            Section("Appearance") {
+                Picker("Switcher theme", selection: themeBinding) {
+                    Text("Built-in (default)").tag(String?.none)
+                    ForEach(themes) { theme in
+                        Text(theme.name).tag(String?.some(theme.id))
+                    }
+                }
+                Button("Reveal Themes Folder…") {
+                    ThemeStore.shared.revealInFinder()
+                }
+                Text("Custom themes are HTML/CSS/JS bundles (an index.html plus a theme.json manifest) that render the switcher. Themed mode shows on the pointer's display only.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
             Section("Shortcuts") {
                 LabeledContent("Window switcher") { Text(settings.triggerModifier.tabHint) }
                 LabeledContent("Current app's windows") { Text(settings.triggerModifier.backtickHint) }
@@ -62,6 +84,9 @@ private struct GeneralSettingsTab: View {
             }
         }
         .formStyle(.grouped)
+        .onAppear {
+            themes = ThemeStore.shared.availableThemes()
+        }
     }
 
     private func updateLaunchAtLogin(_ enabled: Bool) {

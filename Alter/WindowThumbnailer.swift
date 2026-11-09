@@ -17,11 +17,15 @@ final class WindowThumbnailer {
     private var inFlight: Set<CGWindowID> = []
     private var generation = 0
     private var limiter = CaptureLimiter(limit: 4)
+    /// Session-scoped cache for on-demand captures (themed UI), keyed
+    /// "<windowID>-<bucketedMaxWidth>". Cleared on begin/endSession.
+    private var onDemandCache: [String: NSImage] = [:]
 
     /// Fetches the current shareable content and starts a new capture session.
     func beginSession() async {
         generation += 1
         inFlight.removeAll()
+        onDemandCache.removeAll()
         limiter = CaptureLimiter(limit: 4)
         guard CGPreflightScreenCaptureAccess() else {
             windowsByID = [:]
@@ -40,7 +44,38 @@ final class WindowThumbnailer {
     func endSession() {
         generation += 1
         inFlight.removeAll()
+        onDemandCache.removeAll()
         limiter = CaptureLimiter(limit: 4)
+    }
+
+    /// Captures one window on demand for the themed (WKWebView) UI, which
+    /// pulls shots via `alter-shot://` instead of receiving prefetches.
+    /// `maxWidth` is bucketed to 256px steps and clamped to [256, 2048] so a
+    /// theme can't generate an unbounded number of cache entries; results are
+    /// cached for the session. Completion runs on the main actor, nil on
+    /// failure (no permission, unknown id, minimized window).
+    func captureOnDemand(id: CGWindowID, maxWidth: Int, completion: @escaping (NSImage?) -> Void) {
+        let bucket = max(256, min(2048, ((maxWidth + 255) / 256) * 256))
+        let key = "\(id)-\(bucket)"
+        if let cached = onDemandCache[key] {
+            completion(cached)
+            return
+        }
+        guard let scWindow = windowsByID[id] else {
+            completion(nil)
+            return
+        }
+        let session = generation
+        Task { [weak self] in
+            await self?.limiter.acquire()
+            let image = await Self.capture(scWindow: scWindow, maxPixelSize: CGSize(width: bucket, height: bucket))
+            await self?.limiter.release()
+            guard let self, session == self.generation, !Task.isCancelled else { return }
+            await MainActor.run {
+                if let image { self.onDemandCache[key] = image }
+                completion(image)
+            }
+        }
     }
 
     /// Captures every id (deduped, `priority` first, at most 4 concurrent).

@@ -9,6 +9,13 @@ final class SwitcherPanelController {
     /// Invoked when the user clicks a row (click = select + confirm).
     var onConfirm: (() -> Void)?
 
+    /// Window IDs of all cached panels — the catalog excludes these so the
+    /// switcher never lists itself (other Alter windows like Settings are
+    /// listed normally).
+    var panelWindowIDs: Set<CGWindowID> {
+        Set(panels.values.map(\.windowID))
+    }
+
     private let viewModel: SwitcherViewModel
     private var panels: [NSNumber: SwitcherPanel] = [:]
     private var screenObserver: NSObjectProtocol?
@@ -80,6 +87,10 @@ final class SwitcherPanelController {
 /// the panel never needs to become key and never steals focus.
 final class SwitcherPanel {
     var onConfirm: (() -> Void)?
+
+    /// NSWindow.windowNumber == the CGWindowID in CGWindowList entries
+    /// (kCGWindowNumber); valid from window creation, before any show.
+    var windowID: CGWindowID { CGWindowID(panel.windowNumber) }
 
     private let panel: NSPanel
     private let hostingController: NSHostingController<SwitcherView>

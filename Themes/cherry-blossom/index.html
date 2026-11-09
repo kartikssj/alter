@@ -1,0 +1,130 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Zen Maru Gothic';
+    src: url('fonts/zen-maru-gothic-400.woff2') format('woff2');
+    font-weight: 400; font-display: block;
+  }
+  @font-face {
+    font-family: 'Zen Maru Gothic';
+    src: url('fonts/zen-maru-gothic-700.woff2') format('woff2');
+    font-weight: 700; font-display: block;
+  }
+
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { font-family: 'Zen Maru Gothic', sans-serif; color: #5c374c; }
+
+  #card {
+    position: relative; display: flex; flex-direction: column;
+    height: 100%; box-sizing: border-box; padding: 14px 16px 10px;
+    background: linear-gradient(160deg, rgba(255, 247, 249, 0.97), rgba(255, 235, 240, 0.97));
+    border: 1px solid #f2b8c8;
+    border-radius: 18px;
+    box-shadow: 0 12px 40px rgba(214, 120, 150, 0.25);
+    overflow: hidden;
+  }
+
+  /* falling petals */
+  .petal {
+    position: absolute; top: -24px; z-index: 1; pointer-events: none;
+    width: 14px; height: 11px;
+    background: radial-gradient(ellipse at 30% 30%, #ffd9e4, #f5a8bf);
+    border-radius: 60% 10% 60% 10%;
+    opacity: 0.85;
+    animation: fall linear infinite;
+  }
+  @keyframes fall {
+    0%   { transform: translate3d(0, -24px, 0) rotate(0deg); opacity: 0; }
+    8%   { opacity: 0.85; }
+    50%  { transform: translate3d(26px, 230px, 0) rotate(190deg); }
+    92%  { opacity: 0.85; }
+    100% { transform: translate3d(-14px, 500px, 0) rotate(360deg); opacity: 0; }
+  }
+
+  #header { flex: none; text-align: center; padding-bottom: 8px; position: relative; z-index: 2; }
+  #header .jp { font-size: 17px; font-weight: 700; color: #c4587c; letter-spacing: 4px; }
+  #header .en { font-size: 10px; color: #c490a3; letter-spacing: 2px; }
+
+  #mid { display: flex; flex: 1; min-height: 0; gap: 14px; position: relative; z-index: 2; }
+
+  #list { flex: 1; overflow-y: auto; padding: 2px; }
+  .row { display: flex; align-items: center; gap: 10px; padding: 6px 10px; margin-bottom: 4px;
+         background: rgba(255, 255, 255, 0.62); border: 1px solid rgba(242, 184, 200, 0.55);
+         border-radius: 12px; cursor: default; }
+  .row img { flex: none; width: 26px; height: 26px; }
+  .row .texts { min-width: 0; flex: 1; }
+  .row .app { font-weight: 700; font-size: 13px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .title { font-size: 11px; color: #a97b8e; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .bloom { flex: none; visibility: hidden; font-size: 13px; }
+  .row.sel { background: linear-gradient(135deg, #f9c9d8, #f3a9c2); border-color: #e88ca8;
+             box-shadow: 0 3px 12px rgba(214, 120, 150, 0.35); }
+  .row.sel .app { color: #7c2d4b; }
+  .row.sel .title { color: #9c5972; }
+  .row.sel .bloom { visibility: visible; }
+  .row.min { opacity: 0.55; }
+
+  #frame { flex: none; width: 240px; align-self: center; padding: 8px;
+           background: rgba(255, 255, 255, 0.7); border: 1px solid #f2b8c8;
+           border-radius: 14px; box-shadow: 0 6px 18px rgba(214, 120, 150, 0.22);
+           display: flex; align-items: center; justify-content: center; }
+  #frame img { max-width: 100%; max-height: 320px; border-radius: 8px; }
+
+  #footer { flex: none; text-align: center; padding-top: 8px; font-size: 10px;
+            color: #c490a3; letter-spacing: 1px; position: relative; z-index: 2; }
+</style>
+</head>
+<body>
+<div id="card">
+  <span class="petal" style="left: 8%;  animation-duration: 7.5s; animation-delay: 0s;"></span>
+  <span class="petal" style="left: 26%; animation-duration: 9s;   animation-delay: 1.8s; width: 11px; height: 9px;"></span>
+  <span class="petal" style="left: 47%; animation-duration: 8.2s; animation-delay: 3.4s;"></span>
+  <span class="petal" style="left: 66%; animation-duration: 10s;  animation-delay: 0.9s; width: 12px; height: 10px;"></span>
+  <span class="petal" style="left: 84%; animation-duration: 8.8s; animation-delay: 2.6s;"></span>
+  <div id="header">
+    <div class="jp">花見</div>
+    <div class="en">— window viewing —</div>
+  </div>
+  <div id="mid">
+    <div id="list"></div>
+    <div id="frame"><img id="shot" alt=""></div>
+  </div>
+  <div id="footer">release to visit 🌸</div>
+</div>
+<script>
+  var list = document.getElementById('list');
+  var shot = document.getElementById('shot');
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function render(state) {
+    var html = '';
+    state.windows.forEach(function (w, i) {
+      html += '<div class="row' + (w.selected ? ' sel' : '') + (w.isMinimized ? ' min' : '') + '" data-i="' + i + '">'
+        + '<img src="' + w.iconUrl + '" alt="">'
+        + '<span class="texts">'
+        + '<div class="app">' + esc(w.appName) + '</div>'
+        + (w.title ? '<div class="title">' + esc(w.title) + '</div>' : '')
+        + '</span><span class="bloom">🌸</span></div>';
+    });
+    list.innerHTML = html;
+    Array.prototype.forEach.call(list.children, function (row) {
+      row.addEventListener('click', function () {
+        window.alter.confirm(parseInt(row.dataset.i, 10));
+      });
+    });
+    var sel = list.querySelector('.sel');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+
+    var w = state.windows[state.selectedIndex];
+    shot.onerror = function () { shot.onerror = null; if (w) shot.src = w.iconUrl; };
+    if (w && state.previewsEnabled && !w.isMinimized) { shot.src = w.shotUrl; }
+    else if (w) { shot.src = w.iconUrl; }
+  }
+
+  window.alter.onUpdate(render);
+</script>
+</body>
+</html>

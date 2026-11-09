@@ -25,6 +25,8 @@ Debug is signed "Apple Development" (TCC-stable for local dev). Release is **ad-
 - `alter.xcodeproj/` — hand-written, Xcode 16+ folder-synchronized format (`PBXFileSystemSynchronizedRootGroup` on `Alter/`). **Just drop new .swift files into `Alter/`** — no pbxproj edits needed. Keep `Info.plist` at the repo root (inside the synced folder it would be bundled as a resource).
 - `Alter/Assets.xcassets/` — app icon (`AppIcon`, classic 10-slot mac format — the Xcode 14+ single-1024 slot is rejected by actool 26 with "unassigned child"). `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` is set in the target configs. The 1024 master was rendered by a throwaway AppKit script (not committed); regenerate or replace `icon_1024.png` and `sips -z` down to the other sizes if redesigning.
 - `Makefile` — build/run/clean wrapper.
+- `docs/plans/webkit.md` — the WebKit-theming plan (phases, bridge contract, spike results). All phases implemented.
+- `Themes/` — showcase theme gallery (`coder`, `retro-gaming`, `fantasy`, `techno`, `nineties`, `cherry-blossom`, `book`, `cats`, `moto`, `rainbow`), raw-bridge reference implementations with bundled OFL fonts. Run with `ALTER_THEMES_DIR=$PWD/Themes ALTER_THEME=<id>` — launch the binary directly (`build/.../Alter.app/Contents/MacOS/Alter`), as `make run`'s `open` does not forward env vars.
 - Target: macOS 14.0+, Swift 5 mode, signed "Apple Development" (see Signing below).
 
 ## Architecture (data flow)
@@ -32,7 +34,9 @@ Debug is signed "Apple Development" (TCC-stable for local dev). Release is **ad-
 ```
 CGEventTap (HotkeyMonitor)
   -> SwitcherCoordinator.handle(action)
-     -> show: WindowCatalog.currentWindows -> SwitcherViewModel -> SwitcherPanel (NSPanel + SwiftUI)
+     -> show: WindowCatalog.currentWindows -> SwitcherViewModel
+        -> SwitcherPanel (NSPanel + SwiftUI)            [default]
+        -> ThemedSwitcherPanel (NSPanel + WKWebView)    [opt-in theme]
      -> confirm: WindowActivator.activate(entry)
 ```
 
@@ -44,6 +48,7 @@ CGEventTap (HotkeyMonitor)
 - `SwitcherPanelController` — one `SwitcherPanel` per `NSScreen` (switcher shows on all monitors, identical clones keyed by `NSScreenNumber`); drops all cached panels on `didChangeScreenParametersNotification` and recreates lazily on next show (cached `NSScreen` objects go stale on rearrangement).
 - `SwitcherPanel` — borderless `.nonactivatingPanel`, `.canJoinAllSpaces + .fullScreenAuxiliary`, all keys handled by the event tap so the panel never takes key status. Sized via `NSHostingController.sizingOptions = [.preferredContentSize]` + KVO on `preferredContentSize` (SwiftUI lays out asynchronously — never read a size in the same run-loop tick as a model change; that was a real bug). Position is always derived from the screen's `visibleFrame`, never from the panel's current frame — keep-center math drifts when animated resizes chain.
 - `SwitcherViewModel` — `@Observable`; selection defaults to row 1 (quick-toggle to previous window).
+- **Theming (opt-in, off by default; see docs/plans/webkit.md)** — `ThemedSwitcherPanel` is a single pre-warmed `.nonactivatingPanel` hosting a locked-down WKWebView rendering the user's theme; it shows on the **pointer's screen only** (one webview; native panels keep per-screen clones). `SwitcherBridge` pushes the view model as JSON into `window.alter.update(...)` (via `withObservationTracking`, re-registered per fire with a next-tick hop — onChange sees stale values) and validates incoming select/confirm/resize/error messages. `AlterSchemeHandler` serves `alter-icon://<pid>`, `alter-shot://<windowId>?maxw=N` (via `WindowThumbnailer.captureOnDemand`, bucketed to 256px steps, session-cached) and `alter-lib://<name>` (bundled helper assets, allowlisted to `alter-elements.js` only — never serve arbitrary bundle resources). `alter-elements.js` (a bundled resource at `Alter/alter-elements.js`) defines the optional `<al-list>`/`<al-icon>`/`<al-shot>`/`<al-preview>` custom elements + `alter.autoResize()`; themes load it with `<script src="alter-lib://alter-elements.js">`. The webview is local-only: navigation restricted to the theme dir + alter-* schemes, http(s) blocked via WKContentRuleList, nonPersistent data store. **First show after a (re)load is gated** (pendingShow until didFinish + settle beat, or the first post-render resize for `"size": "auto"` themes; 0.6s hard cap) so the panel never flashes intermediate sizes — autoResize deliberately starts measuring only after the first state render. A theme JS error, load failure, or WebContent crash latches `themeFailed` in the coordinator and falls back to the built-in UI until the theme selection changes. Dev overrides: `ALTER_THEMES_DIR` (theme root) + `ALTER_THEME` (theme id, unpersisted).
 - `WindowThumbnailer` — ScreenCaptureKit thumbnails (`SCShareableContent` matched by CGWindowID, `SCScreenshotManager.captureImage`, 4-concurrent limiter). Session-scoped (`beginSession` on show / `endSession` on dismiss); a generation counter drops late results. Callers must be on the main thread. Without Screen Recording permission, captures fail silently and the preview pane is not shown at all.
 - `SettingsStore` — `@Observable`, UserDefaults-backed; `onTriggerModifierChange` callback applies changes live (no restart).
 - `Permissions` — AX (`AXIsProcessTrustedWithOptions`) and Screen Recording (`CGPreflightScreenCaptureAccess`); Settings polls both every second while open.
@@ -52,11 +57,12 @@ CGEventTap (HotkeyMonitor)
 
 1. **Never swallow more than the configured trigger combos.** The other modifier (Cmd in Option mode, Option in Command mode) and Control must pass through — users rely on Cmd-Tab falling back to native in Option mode.
 2. **Panel must stay non-activating.** Focus must remain with the user's app so "frontmost app" (used by Opt-\` filtering) doesn't become Alter.
-3. **Exclude Alter's own PID** in the catalog or the panel lists itself.
+3. **Exclude the switcher panels by window ID** (NSWindow.windowNumber == kCGWindowNumber) — never by own PID, so Alter's other windows (Settings, permission onboarding) stay listed and switchable.
 4. **Ad-hoc signing invalidates TCC grants on every rebuild.** Keep the Apple Development identity (`CODE_SIGN_IDENTITY`, `DEVELOPMENT_TEAM = 29DC9FRNK7` in the pbxproj). If the user reports re-prompts every build, check this first.
 5. If codesign hangs during build, it's a keychain prompt/lock — `security set-key-partition-list -S apple-tool:,apple:,codesign: -s ~/Library/Keychains/login.keychain-db` fixes it (asks user password).
 6. CG↔AX window matching: exact CGWindowID first via the private-but-stable `_AXUIElementGetWindow` (same symbol AltTab/Amethyst use), falling back to title then bounds heuristics. Keep the fallback — the symbol is undocumented. Bounds of minimized windows can be stale — don't make heuristic matching stricter without handling that.
 7. **Icon doesn't update in Dock/Finder after changing the asset catalog** — it's the LaunchServices cache, not the build: `touch` the built .app, `lsregister -f <app path>`, then `killall Dock; killall Finder`.
+8. **WKWebView only renders in a bundled app.** A bare `swiftc` binary shows a webview window as on-screen in CGWindowList but renders it invisible with clicks passing through. Any standalone test harness must be a .app bundle (Info.plist + ad-hoc codesign) or it produces false negatives (Phase 0 spike finding, see docs/plans/webkit.md).
 
 ## Known limitations (documented in README too)
 

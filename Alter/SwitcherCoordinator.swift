@@ -20,6 +20,12 @@ final class SwitcherCoordinator {
         return controller
     }()
 
+    /// Themed (WKWebView) UI: created only when a theme is selected in
+    /// Settings (opt-in). `themeFailed` latches on a theme JS error/crash and
+    /// routes shows to the built-in UI until the theme selection changes.
+    private var themedPanel: ThemedSwitcherPanel?
+    private var themeFailed = false
+
     private var permissionTimer: Timer?
     private var permissionWindow: NSWindow?
     private var isVisible = false
@@ -31,6 +37,10 @@ final class SwitcherCoordinator {
         settings.onTriggerModifierChange = { [weak self] modifier in
             self?.hotkeys.triggerModifier = modifier.eventMask
         }
+        settings.onThemeChange = { [weak self] _ in
+            self?.rebuildThemedPanel()
+        }
+        rebuildThemedPanel()
         hotkeys.onAction = { [weak self] action in self?.handle(action) }
         if Permissions.isAccessibilityTrusted {
             beginHotkeys()
@@ -88,12 +98,64 @@ final class SwitcherCoordinator {
         }
     }
 
+    // MARK: - Themed (WKWebView) UI
+
+    private var usingTheme: Bool {
+        themedPanel != nil && !themeFailed
+    }
+
+    /// (Re)creates the pre-warmed themed panel for the current setting; nil
+    /// setting or an invalid theme means the built-in UI. Called at start and
+    /// on every settings change, so theme edits apply live.
+    private func rebuildThemedPanel() {
+        themedPanel = nil
+        themeFailed = false
+        guard let themeID = settings.themeID,
+              let theme = ThemeStore.shared.theme(withID: themeID) else { return }
+        let panel = ThemedSwitcherPanel(theme: theme, viewModel: viewModel, thumbnailer: thumbnailer)
+        panel.onSelect = { [weak self] index in
+            self?.viewModel.selectedIndex = index
+        }
+        panel.onConfirm = { [weak self] index in
+            guard let self else { return }
+            self.viewModel.selectedIndex = index
+            self.confirmSelection()
+        }
+        panel.onError = { [weak self] message in
+            self?.handleThemeError(message)
+        }
+        themedPanel = panel
+    }
+
+    /// A theme that errors (JS exception or WebContent crash) is benched until
+    /// the selection changes; the current show continues on the built-in UI.
+    private func handleThemeError(_ message: String) {
+        guard !themeFailed else { return }
+        themeFailed = true
+        NSLog("Alter: theme error (%@) — falling back to built-in UI", message)
+        guard isVisible else { return }
+        themedPanel?.hide()
+        if settings.windowScope == .activeDisplay, let screen = Self.pointerScreen() {
+            panel.show(on: screen)
+        } else {
+            panel.show()
+        }
+    }
+
     private func show(mode: SwitcherViewModel.Mode) {
-        let screen: NSScreen? = settings.windowScope == .activeDisplay ? Self.pointerScreen() : nil
+        // Themed mode always shows on the pointer's screen (one webview only);
+        // native mode follows the window-scope setting.
+        let screen: NSScreen? = (usingTheme || settings.windowScope == .activeDisplay) ? Self.pointerScreen() : nil
+        // Exclude only the switcher panels themselves (by window ID) — Alter's
+        // other windows (Settings, permission onboarding) are listed normally
+        // so the user can switch back to them.
+        var excludedIDs = panel.panelWindowIDs
+        if let themedPanel { excludedIDs.insert(themedPanel.windowID) }
         let entries = catalog.currentWindows(
             frontAppScope: mode == .frontApp ? settings.frontAppScope : nil,
             limitTo: screen,
-            recency: recency
+            recency: recency,
+            excludingWindowIDs: excludedIDs
         )
         guard !entries.isEmpty else { return }
         let previewSize = settings.previewSize.paneSize
@@ -101,7 +163,9 @@ final class SwitcherCoordinator {
         viewModel.configure(windows: entries, mode: mode, showPreview: showPreview, previewPaneSize: previewSize)
         isVisible = true
         hotkeys.isSwitcherVisible = true
-        if let screen {
+        if usingTheme, let screen {
+            themedPanel?.show(on: screen)
+        } else if let screen {
             panel.show(on: screen)
         } else {
             panel.show()
@@ -111,11 +175,16 @@ final class SwitcherCoordinator {
             let priority = viewModel.selectedWindow?.id
             // Capture at 2x the pane size for Retina sharpness.
             let maxPixels = CGSize(width: previewSize.width * 2, height: previewSize.height * 2)
+            let prefetch = !usingTheme
             Task {
                 await thumbnailer.beginSession()
-                thumbnailer.prefetch(ids: ids, priority: priority, maxPixelSize: maxPixels) { [weak self] id, image in
-                    guard let self, self.isVisible, let image else { return }
-                    self.viewModel.setThumbnail(image, for: id)
+                // The themed UI pulls shots on demand via alter-shot://; only
+                // the native preview pane prefetches.
+                if prefetch {
+                    thumbnailer.prefetch(ids: ids, priority: priority, maxPixelSize: maxPixels) { [weak self] id, image in
+                        guard let self, self.isVisible, let image else { return }
+                        self.viewModel.setThumbnail(image, for: id)
+                    }
                 }
             }
         }
@@ -142,6 +211,7 @@ final class SwitcherCoordinator {
         isVisible = false
         hotkeys.isSwitcherVisible = false
         panel.hide()
+        themedPanel?.hide()
     }
 
     // MARK: - Permission onboarding

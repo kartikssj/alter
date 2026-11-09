@@ -1,0 +1,133 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/jetbrains-mono.woff2') format('woff2');
+    font-weight: 100 800; /* variable font */
+    font-display: block;
+  }
+
+  html, body { margin: 0; height: 100%; background: transparent; }
+  body { font: 12px 'JetBrains Mono', monospace; color: #cdd6f4; }
+
+  #editor {
+    display: flex; flex-direction: column; height: 100%; box-sizing: border-box;
+    background: rgba(30, 30, 46, 0.96); border-radius: 10px; overflow: hidden;
+    border: 1px solid #45475a;
+  }
+
+  /* title bar */
+  #titlebar { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+              background: #181825; border-bottom: 1px solid #313244; flex: none; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #f38ba8; } .dot.y { background: #f9e2af; } .dot.g { background: #a6e3a1; }
+  #titlebar .path { margin-left: 8px; color: #7f849c; font-size: 11px; }
+  #titlebar .path b { color: #89b4fa; font-weight: 400; }
+
+  #split { display: flex; flex: 1; min-height: 0; }
+
+  /* list = code file */
+  #file { flex: 1; overflow-y: auto; padding: 6px 0; }
+  .line { display: flex; align-items: center; gap: 10px; padding: 3px 12px 3px 0;
+          white-space: nowrap; cursor: default; border-left: 2px solid transparent; }
+  .lineno { flex: none; width: 34px; text-align: right; color: #45475a;
+            user-select: none; font-size: 11px; }
+  .line.sel { background: rgba(137, 180, 250, 0.12); border-left-color: #89b4fa; }
+  .line.sel .lineno { color: #89b4fa; }
+  .caret { flex: none; width: 10px; color: #a6e3a1; visibility: hidden; }
+  .line.sel .caret { visibility: visible; }
+  .line img { flex: none; width: 16px; height: 16px; }
+  .app { color: #a6e3a1; }
+  .line.sel .app { color: #b4f4cf; font-weight: 700; }
+  .cursor { display: inline-block; width: 7px; height: 13px; margin-left: 2px;
+            background: #a6e3a1; vertical-align: -2px;
+            animation: blink 1.06s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+  .title { color: #6c7086; overflow: hidden; text-overflow: ellipsis; }
+  .line.sel .title { color: #9399b2; }
+  .min-tag { color: #f9e2af; font-size: 10px; }
+
+  /* preview = second editor pane */
+  #pane { flex: none; width: 300px; border-left: 1px solid #313244;
+          display: flex; flex-direction: column; background: #181825; }
+  #pane .tab { flex: none; padding: 6px 12px; font-size: 11px; color: #89b4fa;
+               background: #1e1e2e; border-bottom: 1px solid #313244;
+               border-top: 1px solid #89b4fa; align-self: flex-start;
+               max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #pane .viewport { flex: 1; display: flex; align-items: center; justify-content: center;
+                    padding: 14px; min-height: 0; }
+  #pane img { max-width: 100%; max-height: 100%; border: 1px solid #45475a; border-radius: 4px; }
+
+  /* status bar */
+  #status { flex: none; display: flex; gap: 16px; padding: 4px 12px; font-size: 10px;
+            background: #181825; border-top: 1px solid #313244; color: #7f849c; }
+  #status .mode { color: #181825; background: #a6e3a1; padding: 0 6px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="editor">
+  <div id="titlebar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="path">~/<b>alter</b> — window_switcher.swift</span>
+  </div>
+  <div id="split">
+    <div id="file"></div>
+    <div id="pane">
+      <div class="tab" id="tab">preview</div>
+      <div class="viewport"><img id="shot" alt=""></div>
+    </div>
+  </div>
+  <div id="status">
+    <span class="mode" id="mode">NORMAL</span>
+    <span id="count"></span>
+    <span>esc: quit&ensp;⏎: jump</span>
+  </div>
+</div>
+<script>
+  var file = document.getElementById('file');
+  var shot = document.getElementById('shot');
+  var tab = document.getElementById('tab');
+  var count = document.getElementById('count');
+  var mode = document.getElementById('mode');
+
+  function esc(s) { var d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  function render(state) {
+    var html = '';
+    state.windows.forEach(function (w, i) {
+      html += '<div class="line' + (w.selected ? ' sel' : '') + '" data-i="' + i + '">'
+        + '<span class="lineno">' + (i + 1) + '</span>'
+        + '<span class="caret">❯</span>'
+        + '<img src="' + w.iconUrl + '" alt="">'
+        + '<span class="app">' + esc(w.appName) + '</span>'
+        + (w.selected ? '<span class="cursor"></span>' : '')
+        + (w.title ? '<span class="title">// ' + esc(w.title) + '</span>' : '')
+        + (w.isMinimized ? '<span class="min-tag">[minimized]</span>' : '')
+        + '</div>';
+    });
+    file.innerHTML = html;
+    Array.prototype.forEach.call(file.children, function (row) {
+      row.addEventListener('click', function () {
+        window.alter.confirm(parseInt(row.dataset.i, 10));
+      });
+    });
+    var sel = file.querySelector('.sel');
+    if (sel) sel.scrollIntoView({ block: 'nearest' });
+
+    var w = state.windows[state.selectedIndex];
+    tab.textContent = w ? 'preview — ' + w.appName.toLowerCase().replace(/\s+/g, '_') : 'preview';
+    count.textContent = state.windows.length + ' open, ' + (state.selectedIndex + 1) + ' selected';
+    mode.textContent = state.mode === 'frontApp' ? 'APP' : 'NORMAL';
+
+    shot.onerror = function () { shot.onerror = null; if (w) shot.src = w.iconUrl; };
+    if (w && state.previewsEnabled && !w.isMinimized) { shot.src = w.shotUrl; }
+    else if (w) { shot.src = w.iconUrl; }
+  }
+
+  window.alter.onUpdate(render);
+</script>
+</body>
+</html>
