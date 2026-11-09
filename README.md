@@ -5,7 +5,8 @@ A fast window switcher for macOS — a replacement-grade alternative to the buil
 ## Features
 
 - **Opt-Tab** — list all on-screen and minimized windows across apps, sorted most-recently-used. Keep holding Option and tap Tab (Shift-Tab to go backwards); release Option to switch.
-- **Opt-\`** — same list, filtered to the frontmost app's windows. Apps that run one process per window (e.g. Ghostty) are clubbed together by bundle ID.
+- **Opt-\`** — same list, filtered to the frontmost app's windows. Apps that run one process per window are clubbed together by bundle ID (configurable).
+- **Live preview pane** — a screenshot of the highlighted window appears beside the list while you cycle (requires Screen Recording permission; can be turned off in Settings).
 - **Command mode** (Settings) — use Cmd-Tab / Cmd-\` instead, replacing the native switcher and per-app window cycling while Alter runs. Quitting Alter instantly restores the native behavior.
 - **Minimized windows** are listed (dimmed, with a dock badge) and restored on activation.
 - **Settings window** — via Dock icon click, the menu-bar icon, or Cmd-, — with a trigger-modifier picker, live permission status, and launch-at-login.
@@ -25,7 +26,7 @@ verified"). Right-click the app → **Open** once to bypass it permanently.
 
 - macOS 14+, Apple Silicon or Intel.
 - **Accessibility permission** (required) — Alter intercepts the hotkeys via a CGEventTap and focuses windows via the AX API.
-- **Screen Recording permission** (optional) — without it, other apps' window titles can't be read and rows show app names only.
+- **Screen Recording permission** (optional) — enables other apps' window titles and the live preview pane. Without it, rows show app names only.
 
 ## Build & run
 

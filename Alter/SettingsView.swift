@@ -1,36 +1,34 @@
 import ServiceManagement
 import SwiftUI
 
-/// Basic settings, reachable via the Dock icon (app reopen), the app menu's
-/// Settings… item (Cmd-,), or the menu-bar icon.
+/// Settings window, reachable via the Dock icon (app reopen), the app menu's
+/// Settings… item (Cmd-,), or the menu-bar icon. Split into tabs to keep the
+/// window compact.
 struct SettingsView: View {
     let settings: SettingsStore
 
-    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
-    @State private var accessibilityTrusted = Permissions.isAccessibilityTrusted
-    @State private var screenRecordingGranted = Permissions.hasScreenRecording
+    var body: some View {
+        TabView {
+            GeneralSettingsTab(settings: settings)
+                .tabItem { Label("General", systemImage: "gearshape") }
+            WindowSettingsTab(settings: settings)
+                .tabItem { Label("Windows", systemImage: "macwindow") }
+            PermissionSettingsTab()
+                .tabItem { Label("Permissions", systemImage: "lock.shield") }
+        }
+        .frame(width: 480, height: 400)
+    }
+}
 
-    // Permissions can change in System Settings while this window is open.
-    private let permissionPoller = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+private struct GeneralSettingsTab: View {
+    let settings: SettingsStore
+
+    @State private var launchAtLogin = SMAppService.mainApp.status == .enabled
 
     private var triggerBinding: Binding<SettingsStore.TriggerModifier> {
         Binding(
             get: { settings.triggerModifier },
             set: { settings.setTriggerModifier($0) }
-        )
-    }
-
-    private var windowScopeBinding: Binding<SettingsStore.WindowScope> {
-        Binding(
-            get: { settings.windowScope },
-            set: { settings.setWindowScope($0) }
-        )
-    }
-
-    private var frontAppScopeBinding: Binding<SettingsStore.FrontAppScope> {
-        Binding(
-            get: { settings.frontAppScope },
-            set: { settings.setFrontAppScope($0) }
         )
     }
 
@@ -56,7 +54,64 @@ struct SettingsView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
-            Section("Windows") {
+            Section("General") {
+                Toggle("Launch at login", isOn: $launchAtLogin)
+                    .onChange(of: launchAtLogin) { _, newValue in
+                        updateLaunchAtLogin(newValue)
+                    }
+            }
+        }
+        .formStyle(.grouped)
+    }
+
+    private func updateLaunchAtLogin(_ enabled: Bool) {
+        do {
+            if enabled {
+                try SMAppService.mainApp.register()
+            } else {
+                try SMAppService.mainApp.unregister()
+            }
+        } catch {
+            // Revert the toggle to the real status (e.g. requires approval).
+            launchAtLogin = SMAppService.mainApp.status == .enabled
+        }
+    }
+}
+
+private struct WindowSettingsTab: View {
+    let settings: SettingsStore
+
+    private var windowScopeBinding: Binding<SettingsStore.WindowScope> {
+        Binding(
+            get: { settings.windowScope },
+            set: { settings.setWindowScope($0) }
+        )
+    }
+
+    private var frontAppScopeBinding: Binding<SettingsStore.FrontAppScope> {
+        Binding(
+            get: { settings.frontAppScope },
+            set: { settings.setFrontAppScope($0) }
+        )
+    }
+
+    private var previewsBinding: Binding<Bool> {
+        Binding(
+            get: { settings.showWindowPreviews },
+            set: { settings.setShowWindowPreviews($0) }
+        )
+    }
+
+    private var previewSizeBinding: Binding<SettingsStore.PreviewSize> {
+        Binding(
+            get: { settings.previewSize },
+            set: { settings.setPreviewSize($0) }
+        )
+    }
+
+    var body: some View {
+        Form {
+            Section("Window list") {
                 Picker("Show windows from", selection: windowScopeBinding) {
                     ForEach(SettingsStore.WindowScope.allCases) { scope in
                         Text(scope.title).tag(scope)
@@ -76,28 +131,54 @@ struct SettingsView: View {
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }
+            Section("Preview") {
+                Toggle("Show window preview", isOn: previewsBinding)
+                if settings.showWindowPreviews {
+                    Picker("Preview size", selection: previewSizeBinding) {
+                        ForEach(SettingsStore.PreviewSize.allCases) { size in
+                            Text(size.title).tag(size)
+                        }
+                    }
+                    .pickerStyle(.segmented)
+                }
+                Text("Shows a live screenshot of the highlighted window next to the list. Requires Screen Recording permission.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct PermissionSettingsTab: View {
+    @State private var accessibilityTrusted = Permissions.isAccessibilityTrusted
+    @State private var screenRecordingGranted = Permissions.hasScreenRecording
+
+    // Permissions can change in System Settings while this window is open.
+    private let permissionPoller = Timer.publish(every: 1, on: .main, in: .common).autoconnect()
+
+    var body: some View {
+        Form {
             Section("Permissions") {
                 permissionRow(
                     title: "Accessibility",
                     granted: accessibilityTrusted,
                     action: Permissions.openAccessibilitySettings
                 )
+                Text("Required. Lets Alter intercept the hotkeys and focus windows.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
                 permissionRow(
-                    title: "Screen Recording (for window titles)",
+                    title: "Screen Recording",
                     granted: screenRecordingGranted,
                     action: Permissions.openScreenRecordingSettings
                 )
-            }
-            Section("General") {
-                Toggle("Launch at login", isOn: $launchAtLogin)
-                    .onChange(of: launchAtLogin) { _, newValue in
-                        updateLaunchAtLogin(newValue)
-                    }
+                Text("Optional. Enables other apps' window titles and the preview pane.")
+                    .font(.callout)
+                    .foregroundStyle(.secondary)
             }
         }
         .formStyle(.grouped)
-        .frame(width: 440)
-        .fixedSize(horizontal: false, vertical: true)
         .onReceive(permissionPoller) { _ in
             accessibilityTrusted = Permissions.isAccessibilityTrusted
             screenRecordingGranted = Permissions.hasScreenRecording
@@ -115,19 +196,6 @@ struct SettingsView: View {
                     Button("Open Settings…", action: action)
                 }
             }
-        }
-    }
-
-    private func updateLaunchAtLogin(_ enabled: Bool) {
-        do {
-            if enabled {
-                try SMAppService.mainApp.register()
-            } else {
-                try SMAppService.mainApp.unregister()
-            }
-        } catch {
-            // Revert the toggle to the real status (e.g. requires approval).
-            launchAtLogin = SMAppService.mainApp.status == .enabled
         }
     }
 }

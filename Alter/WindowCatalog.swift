@@ -156,9 +156,20 @@ final class WindowCatalog {
             ranked.append((recency.rank(of: window.appKey), window.index, entry))
         }
 
-        // 4. MRU order by app, front-to-back within an app.
+        // 4. Window-level MRU: focusing a window raises it, so front-to-back
+        //    z-order (the on-screen list's index) approximates focus recency.
+        //    Minimized windows have no live z-position — they go last, ordered
+        //    by app recency. Windows of different apps interleave freely.
         return ranked
-            .sorted { ($0.rank, $0.index) < ($1.rank, $1.index) }
+            .sorted { a, b in
+                if a.entry.isMinimized != b.entry.isMinimized {
+                    return !a.entry.isMinimized
+                }
+                if a.entry.isMinimized {
+                    return (a.rank, a.index) < (b.rank, b.index)
+                }
+                return a.index < b.index
+            }
             .map(\.entry)
     }
 

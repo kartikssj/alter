@@ -37,8 +37,13 @@ final class SwitcherPanelController {
     }
 
     /// Shows the panel on a single screen only (used with the
-    /// "active display only" window scope).
+    /// "active display only" window scope). Hides panels on other screens so
+    /// mode switches never leave a stale panel behind.
     func show(on screen: NSScreen) {
+        let targetKey = Self.key(for: screen)
+        for (key, panel) in panels where key != targetKey {
+            panel.hide()
+        }
         panel(for: screen).show()
     }
 
@@ -115,21 +120,18 @@ final class SwitcherPanel {
 
         sizeObserver = hosting.observe(\.preferredContentSize, options: [.new]) { [weak self] controller, _ in
             guard let self, self.panel.isVisible else { return }
-            self.resizeKeepingCenter(to: controller.preferredContentSize, animated: true)
+            self.fitToContent(animated: true)
         }
     }
 
     func show() {
-        if hostingController.preferredContentSize.height > 10 {
-            resizeKeepingCenter(to: hostingController.preferredContentSize, animated: false)
-        }
-        centerOnScreen()
+        fitToContent(animated: false)
         panel.orderFrontRegardless()
         // SwiftUI lays out fresh content asynchronously; re-fit next tick in
         // case the model changed in this same pass.
         DispatchQueue.main.async { [weak self] in
             guard let self, self.panel.isVisible else { return }
-            self.resizeKeepingCenter(to: self.hostingController.preferredContentSize, animated: false)
+            self.fitToContent(animated: false)
         }
     }
 
@@ -137,20 +139,21 @@ final class SwitcherPanel {
         panel.orderOut(nil)
     }
 
-    private func resizeKeepingCenter(to size: NSSize, animated: Bool) {
-        guard size.width > 10, size.height > 10 else { return }
-        let center = NSPoint(x: panel.frame.midX, y: panel.frame.midY)
-        let origin = NSPoint(x: center.x - size.width / 2, y: center.y - size.height / 2)
+    /// The panel is not user-movable, so its correct position is ALWAYS the
+    /// center of its screen. Deriving the origin from the screen (rather than
+    /// preserving the panel's current center) avoids drift when animated
+    /// resizes chain — e.g. switching between Opt-Tab and Opt-` content sizes.
+    private func fitToContent(animated: Bool) {
+        var size = hostingController.preferredContentSize
+        if size.width < 10 || size.height < 10 {
+            size = panel.frame.size // pre-layout fallback: keep current size
+        }
+        let screenFrame = screen.visibleFrame
+        let origin = NSPoint(
+            x: screenFrame.midX - size.width / 2,
+            y: screenFrame.midY - size.height / 2
+        )
         panel.setFrame(NSRect(origin: origin, size: size), display: true, animate: animated)
-    }
-
-    private func centerOnScreen() {
-        let frame = screen.visibleFrame
-        let size = panel.frame.size
-        panel.setFrameOrigin(NSPoint(
-            x: frame.midX - size.width / 2,
-            y: frame.midY - size.height / 2
-        ))
     }
 }
 
@@ -159,6 +162,24 @@ struct SwitcherView: View {
     var onRowClick: (Int) -> Void
 
     var body: some View {
+        HStack(spacing: 0) {
+            list
+            if viewModel.showPreviewPane {
+                Divider()
+                    .padding(.vertical, 10)
+                PreviewPane(entry: viewModel.selectedWindow, image: viewModel.selectedThumbnail)
+                    .frame(width: viewModel.previewPaneSize.width, height: viewModel.previewPaneSize.height)
+            }
+        }
+        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 14, style: .continuous)
+                .strokeBorder(.white.opacity(0.15))
+        )
+        .padding(1)
+    }
+
+    private var list: some View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 ForEach(Array(viewModel.windows.enumerated()), id: \.element.id) { index, entry in
@@ -172,12 +193,35 @@ struct SwitcherView: View {
         .frame(width: 540)
         .fixedSize(horizontal: false, vertical: true)
         .frame(maxHeight: 480)
-        .background(.ultraThinMaterial, in: RoundedRectangle(cornerRadius: 14, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 14, style: .continuous)
-                .strokeBorder(.white.opacity(0.15))
-        )
-        .padding(1)
+    }
+}
+
+/// Live screenshot of the highlighted window; falls back to the app icon while
+/// the capture is in flight (or when it fails, e.g. minimized windows).
+private struct PreviewPane: View {
+    let entry: WindowEntry?
+    let image: NSImage?
+
+    var body: some View {
+        ZStack {
+            if let image {
+                Image(nsImage: image)
+                    .resizable()
+                    .aspectRatio(contentMode: .fit)
+                    .clipShape(RoundedRectangle(cornerRadius: 6, style: .continuous))
+                    .shadow(color: .black.opacity(0.35), radius: 8, y: 2)
+                    .padding(12)
+                    .transition(.opacity)
+            } else if let icon = entry?.icon {
+                Image(nsImage: icon)
+                    .resizable()
+                    .frame(width: 96, height: 96)
+                    .opacity(0.35)
+                    .transition(.opacity)
+            }
+        }
+        .animation(.easeOut(duration: 0.12), value: entry?.id)
+        .animation(.easeOut(duration: 0.12), value: image == nil)
     }
 }
 
