@@ -45,7 +45,7 @@ release:
 	echo "==> dist/Alter-$$VERSION.zip"; \
 	shasum -a 256 "dist/Alter-$$VERSION.zip"
 
-# Prints the Homebrew cask stanza for the tap repo (kartikssj/homebrew-alter),
+# Prints the Homebrew cask stanza for the tap repo (kartikssj/homebrew-tap),
 # with version and sha256 filled in from the artifact in dist/.
 cask:
 	@Scripts/print-cask.sh

@@ -1,5 +1,5 @@
 #!/bin/sh
-# Prints the Homebrew cask stanza for the kartikssj/homebrew-alter tap,
+# Prints the Homebrew cask stanza for the kartikssj/homebrew-tap tap,
 # with version and sha256 filled in from the release artifact.
 set -eu
 cd "$(dirname "$0")/.."
@@ -35,7 +35,7 @@ cask "alter" do
   caveats <<~EOS
     Alter is not notarized yet. On first launch, right-click the app and choose
     Open, or install with:
-      brew install --cask kartikssj/alter/alter --no-quarantine
+      brew install --cask kartikssj/tap/alter --no-quarantine
 
     Alter requires Accessibility access (to intercept the hotkeys and focus
     windows) and optionally Screen Recording (to show other apps' window

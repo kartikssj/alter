@@ -11,7 +11,7 @@ macOS window switcher app (Swift, AppKit + SwiftUI views, zero third-party depen
 - `make build` — xcodebuild, Debug, into `build/`. Must end with `BUILD SUCCEEDED`.
 - `make run` — build + `open` the app. `make clean` wipes `build/`.
 - `make release` — Release build into `build/`, zip into `dist/Alter-<version>.zip` + SHA-256. **Must pass `-destination 'generic/platform=macOS'`** or xcodebuild 26 picks "My Mac (arm64)" and silently ships an arm64-only binary (verified: `lipo -info` must show `x86_64 arm64`). Version comes from `MARKETING_VERSION` in the pbxproj (bump there, tag `v<version>`).
-- `make cask` — prints the Homebrew cask stanza (version + sha256 filled from the dist zip) for the `kartikssj/homebrew-alter` tap repo (`Casks/alter.rb`).
+- `make cask` — prints the Homebrew cask stanza (version + sha256 filled from the dist zip) for the `kartikssj/homebrew-tap` tap repo (`Casks/alter.rb`).
 - No test target. Verification is manual: press the hotkey, check the panel, confirm a switch happens.
 - **LSP noise**: SourceKit reports bogus "cannot find X in scope" cross-file errors until a build indexes the project. Trust `make build`, not editor diagnostics.
 - **Do not** revert to a SwiftUI `Settings` scene for the settings window: its `showSettingsWindow:` action reported handled but never materialized a window on macOS 15/Xcode 26. The self-managed `NSWindow` in `AppDelegate.showSettings()` is deliberate.
