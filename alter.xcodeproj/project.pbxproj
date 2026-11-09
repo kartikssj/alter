@@ -6,6 +6,10 @@
 	objectVersion = 77;
 	objects = {
 
+/* Begin PBXBuildFile section */
+		A17E50000000000000000011 /* Themes in Resources */ = {isa = PBXBuildFile; fileRef = A17E50000000000000000010 /* Themes */; };
+/* End PBXBuildFile section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		A17E50000000000000000001 /* Alter */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
@@ -16,6 +20,7 @@
 
 /* Begin PBXFileReference section */
 		A17E50000000000000000005 /* Alter.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Alter.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		A17E50000000000000000010 /* Themes */ = {isa = PBXFileReference; lastKnownFileType = folder; path = Themes; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -33,6 +38,7 @@
 			isa = PBXGroup;
 			children = (
 				A17E50000000000000000001 /* Alter */,
+				A17E50000000000000000010 /* Themes */,
 				A17E50000000000000000004 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -109,6 +115,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A17E50000000000000000011 /* Themes in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -138,7 +145,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kartiku.alter;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -166,7 +173,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 14.0;
-				MARKETING_VERSION = 0.2.0;
+				MARKETING_VERSION = 0.2.1;
 				CURRENT_PROJECT_VERSION = 1;
 				PRODUCT_BUNDLE_IDENTIFIER = com.kartiku.alter;
 				PRODUCT_NAME = "$(TARGET_NAME)";

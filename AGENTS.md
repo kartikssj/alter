@@ -22,10 +22,10 @@ Debug is signed "Apple Development" (TCC-stable for local dev). Release is **ad-
 
 ## Project layout
 
-- `alter.xcodeproj/` — hand-written, Xcode 16+ folder-synchronized format (`PBXFileSystemSynchronizedRootGroup` on `Alter/`). **Just drop new .swift files into `Alter/`** — no pbxproj edits needed. Keep `Info.plist` at the repo root (inside the synced folder it would be bundled as a resource).
+- `alter.xcodeproj/` — hand-written, Xcode 16+ folder-synchronized format (`PBXFileSystemSynchronizedRootGroup` on `Alter/`). **Just drop new .swift files into `Alter/`** — no pbxproj edits needed. Keep `Info.plist` at the repo root (inside the synced folder it would be bundled as a resource). **Exception:** `Themes/` is a `PBXFileReference` folder reference in the Resources phase so it bundles as `Contents/Resources/Themes/<id>/` with structure intact — do NOT move it under `Alter/` (the synced group flattens resources, and every theme's `index.html` collides).
 - `Alter/Assets.xcassets/` — app icon (`AppIcon`, classic 10-slot mac format — the Xcode 14+ single-1024 slot is rejected by actool 26 with "unassigned child"). `ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon` is set in the target configs. The 1024 master was rendered by a throwaway AppKit script (not committed); regenerate or replace `icon_1024.png` and `sips -z` down to the other sizes if redesigning.
 - `Makefile` — build/run/clean wrapper.
-- `Themes/` — showcase theme gallery (`coder`, `retro-gaming`, `fantasy`, `techno`, `nineties`, `cherry-blossom`, `book`, `cats`, `moto`, `rainbow`), raw-bridge reference implementations with bundled OFL fonts. Run with `ALTER_THEMES_DIR=$PWD/Themes ALTER_THEME=<id>` — launch the binary directly (`build/.../Alter.app/Contents/MacOS/Alter`), as `make run`'s `open` does not forward env vars.
+- `Themes/` — showcase theme gallery (`coder`, `retro-gaming`, `fantasy`, `techno`, `nineties`, `cherry-blossom`, `book`, `cats`, `moto`, `rainbow`), raw-bridge reference implementations with bundled OFL fonts, **bundled into the app** (see the folder-reference exception above). `ThemeStore` merges bundle + user dir (`~/Library/Application Support/Alter/Themes/`), user copy wins on id collision. Run from the repo with `ALTER_THEMES_DIR=$PWD/Themes ALTER_THEME=<id>` — launch the binary directly (`build/.../Alter.app/Contents/MacOS/Alter`), as `make run`'s `open` does not forward env vars.
 - Target: macOS 14.0+, Swift 5 mode, signed "Apple Development" (see Signing below).
 
 ## Architecture (data flow)

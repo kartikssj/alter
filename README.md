@@ -54,14 +54,19 @@ The app is signed with an Apple Development certificate (configured in the targe
 - If Alter hangs or quits, macOS disables its event tap and the native switcher automatically works again — Cmd-Tab is never left dead.
 - Inside secure password fields, event taps are blocked by macOS, so the shortcut briefly reverts to native behavior.
 
-## Custom themes (experimental)
+## Custom themes
 
-The switcher's look is fully customizable with plain HTML/CSS/JS. Theming is
-**opt-in**: the built-in UI stays the default, and is also the automatic
-fallback if a theme is missing, fails to load, or throws a JS error.
+The switcher's look is fully customizable with plain HTML/CSS/JS. **Ten
+showcase themes are bundled with the app** — pick one in Settings →
+Appearance → Switcher theme; no setup needed. Theming is opt-in: the built-in
+UI stays the default, and is also the automatic fallback if a theme is
+missing, fails to load, or throws a JS error.
 
-Enable: Settings → Appearance → Switcher theme. "Reveal Themes Folder…" opens
-the theme directory, `~/Library/Application Support/Alter/Themes/`.
+To build your own: Settings → "Reveal Themes Folder…" opens
+`~/Library/Application Support/Alter/Themes/` — drop a theme folder in there
+and it appears in the picker. User themes **override bundled ones with the
+same folder name**, so to customize a bundled theme, copy it into your themes
+folder and edit the copy.
 
 A theme is a folder in that directory:
 
@@ -134,10 +139,10 @@ defines custom elements so simple themes need no rendering JS:
 - `<al-preview>` — the selected window's shot; hides itself when previews are
   disabled (mirrors the built-in behavior).
 
-### Sample themes
+### Bundled themes
 
-Ten showcase themes ship in `Themes/` (fonts are bundled, SIL OFL — license
-files included per theme):
+Ten showcase themes ship with the app (repo: `Themes/`, fonts are bundled,
+SIL OFL — license files included per theme):
 
 - `coder/` — IDE/terminal look: line numbers, `❯` caret + blinking cursor,
   traffic-light header, preview in a split-editor pane.
@@ -161,7 +166,7 @@ files included per theme):
 - `rainbow/` — gradient celebration (dark): animated rainbow ring (conic
   `@property`), golden-angle hue accent per row, Fredoka + Quicksand.
 
-To try one: copy it into the themes folder and pick it in Settings, or run
+All ten are selectable in Settings out of the box. For theme development, run
 from the repo with env overrides (launch the binary directly — `make run`'s
 `open` doesn't forward them):
 `ALTER_THEMES_DIR=$PWD/Themes ALTER_THEME=techno build/Build/Products/Debug/Alter.app/Contents/MacOS/Alter`
