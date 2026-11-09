@@ -4,10 +4,17 @@ import AppKit
 ///
 /// A theme is a folder containing an `index.html` (required) and an optional
 /// `theme.json` manifest: `{name, author, size: "auto" | {"width", "height"}}`.
-/// Themes live in `~/Library/Application Support/Alter/Themes/<name>/`
-/// (`ALTER_THEMES_DIR` overrides for development). Theming is opt-in; the
-/// built-in SwiftUI UI is the default. See README → Custom themes for the
-/// bridge contract themes use.
+/// Themes come from two places, merged by id:
+///
+///   1. The app bundle's `Contents/Resources/Themes/` — the read-only
+///      showcase gallery shipped with Alter.
+///   2. `~/Library/Application Support/Alter/Themes/` — user themes, which
+///      WIN on id collision (copy a bundled theme here, same folder name,
+///      to customize it). `ALTER_THEMES_DIR` overrides this location for
+///      development.
+///
+/// Theming is opt-in; the built-in SwiftUI UI is the default. See README →
+/// Custom themes for the bridge contract themes use.
 final class ThemeStore {
     static let shared = ThemeStore()
 
@@ -25,6 +32,8 @@ final class ThemeStore {
 
     private init() {}
 
+    /// User themes directory: `~/Library/Application Support/Alter/Themes/`
+    /// (`ALTER_THEMES_DIR` overrides for development).
     var themesDirectory: URL {
         if let override = ProcessInfo.processInfo.environment["ALTER_THEMES_DIR"], !override.isEmpty {
             return URL(fileURLWithPath: (override as NSString).expandingTildeInPath, isDirectory: true)
@@ -33,20 +42,38 @@ final class ThemeStore {
             .appendingPathComponent("Alter/Themes", isDirectory: true)
     }
 
+    /// The showcase gallery bundled with the app (read-only).
+    private var bundledThemesDirectory: URL? {
+        Bundle.main.resourceURL?.appendingPathComponent("Themes", isDirectory: true)
+    }
+
+    /// Bundled themes plus user themes; on id collision the user's copy wins.
     func availableThemes() -> [Theme] {
-        guard let folders = try? FileManager.default.contentsOfDirectory(
-            at: themesDirectory, includingPropertiesForKeys: nil
-        ) else { return [] }
-        return folders
-            .compactMap(theme(from:))
-            .sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
+        var byID: [String: Theme] = [:]
+        for dir in [bundledThemesDirectory, themesDirectory].compactMap({ $0 }) {
+            guard let folders = try? FileManager.default.contentsOfDirectory(
+                at: dir, includingPropertiesForKeys: nil
+            ) else { continue }
+            for folder in folders {
+                if let theme = theme(from: folder) {
+                    byID[theme.id] = theme
+                }
+            }
+        }
+        return byID.values.sorted { $0.name.localizedCaseInsensitiveCompare($1.name) == .orderedAscending }
     }
 
     func theme(withID id: String) -> Theme? {
         // The id is a folder name, but it arrives via UserDefaults — treat it
-        // as untrusted and never allow it to escape the themes directory.
+        // as untrusted and never allow it to escape the themes directories.
         guard !id.isEmpty, !id.contains("/"), id != ".", id != ".." else { return nil }
-        return theme(from: themesDirectory.appendingPathComponent(id, isDirectory: true))
+        if let user = theme(from: themesDirectory.appendingPathComponent(id, isDirectory: true)) {
+            return user
+        }
+        if let bundled = bundledThemesDirectory {
+            return theme(from: bundled.appendingPathComponent(id, isDirectory: true))
+        }
+        return nil
     }
 
     @discardableResult
