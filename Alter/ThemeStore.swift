@@ -28,6 +28,9 @@ final class ThemeStore {
         let size: CGSize?
         let directory: URL
         let indexURL: URL
+        /// search.html, if the theme styles the search panel too (auto-sized
+        /// via autoResize); nil → search falls back to the built-in UI.
+        let searchIndexURL: URL?
     }
 
     private init() {}
@@ -92,13 +95,15 @@ final class ThemeStore {
         let manifest = (try? Data(contentsOf: folder.appendingPathComponent("theme.json")))
             .flatMap { try? JSONDecoder().decode(Manifest.self, from: $0) }
         let id = folder.lastPathComponent
+        let searchIndexURL = folder.appendingPathComponent("search.html")
         return Theme(
             id: id,
             name: manifest?.name ?? id,
             author: manifest?.author,
             size: manifest?.size?.cgSize,
             directory: folder,
-            indexURL: indexURL
+            indexURL: indexURL,
+            searchIndexURL: FileManager.default.fileExists(atPath: searchIndexURL.path) ? searchIndexURL : nil
         )
     }
 }

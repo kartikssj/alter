@@ -1,0 +1,79 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'EB Garamond';
+    src: url('fonts/eb-garamond-400.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: block;
+  }
+  @font-face {
+    font-family: 'EB Garamond';
+    src: url('fonts/eb-garamond-400-italic.woff2') format('woff2');
+    font-weight: 400; font-style: italic; font-display: block;
+  }
+  @font-face {
+    font-family: 'Playfair Display';
+    src: url('fonts/playfair-display-700.woff2') format('woff2');
+    font-weight: 700; font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 580px; font-family: 'EB Garamond', serif; color: #2e2618; }
+
+  /* a single page of the book */
+  #page {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    padding: 18px 24px 12px;
+    background-color: #f5efe0;
+    background-image: url('texture.svg');
+    border-radius: 3px 8px 8px 3px;
+    box-shadow: 0 14px 44px rgba(30, 20, 8, 0.55), inset 0 0 40px rgba(120, 95, 50, 0.16);
+    border: 1px solid #b8a888;
+  }
+
+  .chapter { flex: none; text-align: center; font-family: 'Playfair Display', serif;
+             font-weight: 700; font-size: 15px; letter-spacing: 2px; color: #5a4526;
+             padding-bottom: 8px; border-bottom: 1px solid rgba(90, 69, 38, 0.35); margin-bottom: 10px; }
+  .chapter small { display: block; font-family: 'EB Garamond', serif; font-style: italic;
+                   font-weight: 400; font-size: 11px; letter-spacing: 0.5px; color: #8a7150; }
+
+  #queryrow { flex: none; display: flex; align-items: baseline; gap: 8px;
+              padding: 2px 8px 10px; }
+  #queryrow .drop { font-family: 'Playfair Display', serif; font-weight: 700;
+                    font-size: 22px; color: #8b1e1e; }
+  al-search-field { flex: 1; min-width: 0; font-size: 18px; }
+  al-search-field::part(placeholder) { color: #a89374; font-style: italic; }
+  al-search-field::part(caret) { background: #8b1e1e; }
+
+  al-search-list { display: block; max-height: 300px; color: #2e2618; --al-icon-size: 24px; }
+  al-search-list::part(scroll) { padding: 2px 6px 2px 2px; }
+  al-search-list::part(row) { position: relative; border-radius: 0;
+                              padding: 5px 20px 5px 8px; }
+  al-search-list::part(name) { font-family: 'Playfair Display', serif; font-weight: 700;
+                               font-size: 14px; }
+  al-search-list::part(subtitle) { font-style: italic; font-size: 13px; color: #6d5a3d; }
+  /* the selected entry is underlined in red ink, marked with a ribbon */
+  al-search-list::part(row-selected) { background: rgba(139, 30, 30, 0.06); color: #2e2618; }
+  al-search-list::part(empty) { font-style: italic; color: #8a7150; }
+  al-search-list::part(icon) { filter: sepia(0.3) saturate(0.9); }
+
+  .folio { flex: none; text-align: center; padding-top: 8px; font-size: 11px;
+           color: #8a7150; letter-spacing: 1px; }
+</style>
+</head>
+<body>
+<div id="page">
+  <div class="chapter">Index<small>in which all things are found by name</small></div>
+  <div id="queryrow">
+    <span class="drop">Q</span>
+    <al-search-field placeholder="look up a word…"></al-search-field>
+  </div>
+  <al-search-list empty-text="— not in this volume —"></al-search-list>
+  <div class="folio">⏎ to open the entry · ⌘⏎ to find its shelf · esc to close the book</div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

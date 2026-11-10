@@ -1,0 +1,83 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Baloo 2';
+    src: url('fonts/baloo2.woff2') format('woff2');
+    font-weight: 400 800; /* variable font */
+    font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 560px; font-family: 'Baloo 2', sans-serif; color: #4a3728; padding-top: 16px; }
+
+  /* the card is the cat */
+  #cat {
+    position: relative; display: flex; flex-direction: column;
+    box-sizing: border-box; padding: 16px 16px 10px;
+    background: #fff8ee;
+    border: 3px solid #f4a259;
+    border-radius: 22px;
+    box-shadow: 0 12px 36px rgba(244, 162, 89, 0.3);
+  }
+  /* ears */
+  #cat::before, #cat::after {
+    content: ''; position: absolute; top: -14px; width: 0; height: 0;
+    border-left: 16px solid transparent; border-right: 16px solid transparent;
+    border-bottom: 18px solid #f4a259;
+  }
+  #cat::before { left: 26px; transform: rotate(-12deg); }
+  #cat::after  { right: 26px; transform: rotate(12deg); }
+
+  #header { flex: none; text-align: center; padding-bottom: 6px; }
+  #header .title { font-size: 17px; font-weight: 700; color: #e07b39; }
+  #header .sub { font-size: 11px; color: #b08d6f; }
+
+  #queryrow { flex: none; display: flex; align-items: center; gap: 8px;
+              padding: 2px 10px 8px; }
+  #queryrow .paw { font-size: 14px; }
+  al-search-field { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; }
+  al-search-field::part(placeholder) { color: #cfb49e; font-weight: 400; }
+  al-search-field::part(caret) { background: #e07b39; }
+
+  al-search-list { display: block; max-height: 280px; color: #4a3728; --al-icon-size: 26px; }
+  al-search-list::part(scroll) { padding: 2px; }
+  al-search-list::part(row) { border-radius: 999px; margin-bottom: 3px;
+                              padding: 6px 12px; border: 2px solid transparent; }
+  al-search-list::part(row-selected) {
+    background: #f4a259; border-color: #e07b39; color: #fff;
+    animation: wiggle 0.3s ease-in-out;
+  }
+  @keyframes wiggle {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-0.7deg); }
+    75% { transform: rotate(0.7deg); }
+  }
+  al-search-list::part(name) { font-weight: 700; font-size: 14px; }
+  al-search-list::part(subtitle) { font-size: 11px; color: #a5826a; }
+  al-search-list::part(empty) { color: #b08d6f; }
+  al-search-list::part(icon) { border-radius: 50%; border: 2px solid #f0dcc0;
+                               background: #fff; box-sizing: border-box; }
+
+  #footer { flex: none; text-align: center; padding-top: 8px; font-size: 11px; color: #b08d6f; }
+</style>
+</head>
+<body>
+<div id="cat">
+  <div id="header">
+    <div class="title">Find the Cat… er, File</div>
+    <div class="sub">it's hiding somewhere on this Mac</div>
+  </div>
+  <div id="queryrow">
+    <span class="paw">🐾</span>
+    <al-search-field placeholder="psst… type a name"></al-search-field>
+  </div>
+  <al-search-list empty-text="no cats found 🙀"></al-search-list>
+  <div id="footer">=^･ω･^=&ensp;⏎ to catch&ensp;·&ensp;esc to let it go</div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

@@ -1,0 +1,76 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'JetBrains Mono';
+    src: url('fonts/jetbrains-mono.woff2') format('woff2');
+    font-weight: 100 800; /* variable font */
+    font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 600px; font: 12px 'JetBrains Mono', monospace; color: #cdd6f4; }
+
+  #editor {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    background: rgba(30, 30, 46, 0.96); border-radius: 10px; overflow: hidden;
+    border: 1px solid #45475a;
+  }
+
+  /* title bar */
+  #titlebar { display: flex; align-items: center; gap: 8px; padding: 8px 12px;
+              background: #181825; border-bottom: 1px solid #313244; flex: none; }
+  .dot { width: 11px; height: 11px; border-radius: 50%; }
+  .dot.r { background: #f38ba8; } .dot.y { background: #f9e2af; } .dot.g { background: #a6e3a1; }
+  #titlebar .path { margin-left: 8px; color: #7f849c; font-size: 11px; }
+  #titlebar .path b { color: #89b4fa; font-weight: 400; }
+
+  /* query line = shell prompt */
+  #prompt { display: flex; align-items: center; gap: 10px; padding: 12px 14px; flex: none; }
+  #prompt .ps1 { color: #a6e3a1; font-weight: 700; }
+  al-search-field { flex: 1; min-width: 0; font-size: 14px; color: #cdd6f4; }
+  al-search-field::part(placeholder) { color: #585b70; }
+  al-search-field::part(caret) { background: #a6e3a1; width: 8px; }
+
+  /* results = code file */
+  al-search-list { display: block; max-height: 320px; color: #cdd6f4;
+                   --al-icon-size: 16px; }
+  al-search-list::part(scroll) { padding: 4px 0; }
+  al-search-list::part(row) { border-left: 2px solid transparent; border-radius: 0;
+                              padding: 4px 12px; }
+  al-search-list::part(row-selected) { background: rgba(137, 180, 250, 0.12);
+                                       border-left-color: #89b4fa; }
+  al-search-list::part(name) { color: #a6e3a1; font-weight: 400; }
+  al-search-list::part(row-selected) { color: #cdd6f4; }
+  al-search-list::part(subtitle) { color: #6c7086; }
+  al-search-list::part(empty) { color: #585b70; }
+  al-search-list::part(icon) { width: 16px; height: 16px; }
+
+  /* status bar */
+  #status { flex: none; display: flex; gap: 16px; padding: 4px 12px; font-size: 10px;
+            background: #181825; border-top: 1px solid #313244; color: #7f849c; }
+  #status .mode { color: #181825; background: #89b4fa; padding: 0 6px; font-weight: 700; }
+</style>
+</head>
+<body>
+<div id="editor">
+  <div id="titlebar">
+    <span class="dot r"></span><span class="dot y"></span><span class="dot g"></span>
+    <span class="path">~/<b>alter</b> — search.swift</span>
+  </div>
+  <div id="prompt">
+    <span class="ps1">❯</span>
+    <al-search-field placeholder="grep apps, folders, files…"></al-search-field>
+  </div>
+  <al-search-list empty-text="// no matches"></al-search-list>
+  <div id="status">
+    <span class="mode">SEARCH</span>
+    <span>⏎: open&ensp;⌘⏎: reveal&ensp;esc: quit</span>
+  </div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

@@ -13,6 +13,8 @@ struct SettingsView: View {
                 .tabItem { Label("General", systemImage: "gearshape") }
             WindowSettingsTab(settings: settings)
                 .tabItem { Label("Windows", systemImage: "macwindow") }
+            SearchSettingsTab(settings: settings)
+                .tabItem { Label("Search", systemImage: "magnifyingglass") }
             PermissionSettingsTab()
                 .tabItem { Label("Permissions", systemImage: "lock.shield") }
         }
@@ -169,6 +171,78 @@ private struct WindowSettingsTab: View {
                 Text("Shows a live screenshot of the highlighted window next to the list. Requires Screen Recording permission.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
+            }
+        }
+        .formStyle(.grouped)
+    }
+}
+
+private struct SearchSettingsTab: View {
+    let settings: SettingsStore
+
+    private var enabledBinding: Binding<Bool> {
+        Binding(
+            get: { settings.searchEnabled },
+            set: { settings.setSearchEnabled($0) }
+        )
+    }
+
+    private var modifierBinding: Binding<SettingsStore.TriggerModifier> {
+        Binding(
+            get: { settings.searchTriggerModifier },
+            set: { settings.setSearchTriggerModifier($0) }
+        )
+    }
+
+    private var applicationsBinding: Binding<Bool> {
+        Binding(
+            get: { settings.searchShowApplications },
+            set: { settings.setSearchShowApplications($0) }
+        )
+    }
+
+    private var foldersBinding: Binding<Bool> {
+        Binding(
+            get: { settings.searchShowFolders },
+            set: { settings.setSearchShowFolders($0) }
+        )
+    }
+
+    private var filesBinding: Binding<Bool> {
+        Binding(
+            get: { settings.searchShowFiles },
+            set: { settings.setSearchShowFiles($0) }
+        )
+    }
+
+    var body: some View {
+        Form {
+            Section("Spotlight-style search") {
+                Toggle("Enable search", isOn: enabledBinding)
+                if settings.searchEnabled {
+                    Picker("Summon with", selection: modifierBinding) {
+                        ForEach(SettingsStore.TriggerModifier.allCases) { modifier in
+                            Text(modifier.title).tag(modifier)
+                        }
+                    }
+                    .pickerStyle(.radioGroup)
+                    LabeledContent("Shortcut") { Text("\(settings.searchTriggerModifier.spaceHint)") }
+                    Text("Type to search using the system Spotlight index. Return opens the selected result, ⌘↩ reveals it in Finder, Esc closes. The search panel shows on the pointer's display.")
+                        .font(.callout)
+                        .foregroundStyle(.secondary)
+                }
+            }
+            if settings.searchEnabled {
+                Section("Show in results") {
+                    Toggle("Applications", isOn: applicationsBinding)
+                    Toggle("Folders", isOn: foldersBinding)
+                    Toggle("Files (documents, images, media)", isOn: filesBinding)
+                    if !settings.searchShowApplications && !settings.searchShowFolders && !settings.searchShowFiles {
+                        Text("All categories are off — search will return no results.")
+                            .font(.callout)
+                            .foregroundStyle(.orange)
+                    }
+                }
             }
         }
         .formStyle(.grouped)

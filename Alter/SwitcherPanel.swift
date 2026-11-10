@@ -202,7 +202,10 @@ struct SwitcherView: View {
             .padding(6)
         }
         .frame(width: 540)
-        .fixedSize(horizontal: false, vertical: true)
+        // No .fixedSize(vertical: true) here — combined with frame(maxHeight:)
+        // it makes the ScrollView ignore the proposal and center its over-tall
+        // unclipped content inside the clamped frame (rows spill above/below).
+        // ScrollView already reports min(contentHeight, proposal).
         .frame(maxHeight: 480)
     }
 }

@@ -8,6 +8,9 @@ import WebKit
 ///                                 WindowThumbnailer (session-scoped cache)
 ///   alter-lib://<name>            bundled helper assets (allowlisted: only
 ///                                 alter-elements.js) for theme <script> tags
+///   alter-fileicon://<path>       file/folder/app icon PNG by percent-encoded
+///                                 absolute path (themed search results only —
+///                                 serves icon images, never file contents)
 ///
 /// Themes reference these from plain `<img src>` / `<script src>`. Failures
 /// (no permission, minimized window, unknown id) get an error response so
@@ -20,12 +23,13 @@ final class AlterSchemeHandler: NSObject, WKURLSchemeHandler {
     static let iconScheme = "alter-icon"
     static let shotScheme = "alter-shot"
     static let libScheme = "alter-lib"
+    static let fileIconScheme = "alter-fileicon"
 
     /// Bundled files a theme may load via alter-lib://. Allowlisted by name —
     /// never serve arbitrary bundle resources to web content.
     private static let allowedLibFiles = ["alter-elements.js"]
 
-    private let thumbnailer: WindowThumbnailer
+    private let thumbnailer: WindowThumbnailer?
     private var iconCache: [pid_t: Data] = [:]
     private var libCache: [String: Data] = [:]
     /// Tasks WebKit told us to stop. Responding to a stopped task crashes, so
@@ -33,7 +37,7 @@ final class AlterSchemeHandler: NSObject, WKURLSchemeHandler {
     /// requests per show — trivial.
     private var stoppedTasks: Set<ObjectIdentifier> = []
 
-    init(thumbnailer: WindowThumbnailer) {
+    init(thumbnailer: WindowThumbnailer?) {
         self.thumbnailer = thumbnailer
     }
 
@@ -48,6 +52,7 @@ final class AlterSchemeHandler: NSObject, WKURLSchemeHandler {
             case Self.iconScheme: self.serveIcon(url: url, task: urlSchemeTask)
             case Self.shotScheme: self.serveShot(url: url, task: urlSchemeTask)
             case Self.libScheme: self.serveLib(url: url, task: urlSchemeTask)
+            case Self.fileIconScheme: self.serveFileIcon(url: url, task: urlSchemeTask)
             default: self.fail(urlSchemeTask)
             }
         }
@@ -77,6 +82,37 @@ final class AlterSchemeHandler: NSObject, WKURLSchemeHandler {
             return
         }
         iconCache[pid] = data
+        respond(task: task, data: data, mimeType: "image/png")
+    }
+
+    // MARK: - File icons (themed search results)
+
+    private var fileIconCache: [String: Data] = [:]
+
+    /// alter-fileicon://<percent-encoded absolute path> — e.g.
+    /// alter-fileicon:///Applications/Safari.app. Only the file's icon image
+    /// is served, never its contents.
+    private func serveFileIcon(url: URL, task: WKURLSchemeTask) {
+        guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false) else {
+            fail(task)
+            return
+        }
+        // host+path split: "alter-fileicon:///a/b" puts nothing in host and
+        // "/a/b" in path; tolerate "alter-fileicon://host/path" too.
+        let raw = (components.host ?? "") + components.path
+        guard let path = raw.removingPercentEncoding, path.hasPrefix("/") else {
+            fail(task)
+            return
+        }
+        if let cached = fileIconCache[path] {
+            respond(task: task, data: cached, mimeType: "image/png")
+            return
+        }
+        guard let data = Self.pngData(NSWorkspace.shared.icon(forFile: path)) else {
+            fail(task)
+            return
+        }
+        fileIconCache[path] = data
         respond(task: task, data: data, mimeType: "image/png")
     }
 
@@ -114,6 +150,10 @@ final class AlterSchemeHandler: NSObject, WKURLSchemeHandler {
             .first(where: { $0.name == "maxw" })
             .flatMap { $0.value }
             .flatMap(Int.init) ?? 800
+        guard let thumbnailer else {
+            fail(task) // search panel's handler has no thumbnailer
+            return
+        }
         thumbnailer.captureOnDemand(id: id, maxWidth: maxw) { [weak self] image in
             guard let self else { return }
             guard let image, let data = Self.pngData(image) else {

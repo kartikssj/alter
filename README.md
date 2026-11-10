@@ -76,7 +76,8 @@ A theme is a folder in that directory:
 
 ```
 Themes/my-theme/
-  index.html   (required)
+  index.html   (required — the window switcher)
+  search.html  (optional — the Spotlight-style search panel)
   theme.json   (optional manifest)
   ...any CSS/JS/assets, referenced relatively
 ```
@@ -142,6 +143,40 @@ defines custom elements so simple themes need no rendering JS:
   automatic icon fallback.
 - `<al-preview>` — the selected window's shot; hides itself when previews are
   disabled (mirrors the built-in behavior).
+
+### Theming the search panel
+
+A theme that also ships `search.html` styles the Spotlight-style search panel
+(⌥Space by default); themes without one get the built-in search UI, and a
+search page that errors falls back to it until the theme selection changes.
+Search pages are always auto-sized — end the page with
+`alter.autoResize()`.
+
+The same bridge serves a search-shaped state on `search.html`:
+
+```js
+window.alter.onUpdate(function (state) {
+  // state = {
+  //   query, searching, selectedIndex,
+  //   results: [{ name, subtitle, kind, selected, iconUrl }]
+  //   // kind: "application" | "folder" | "document"
+  // }
+  render(state);
+});
+```
+
+`iconUrl` here is `alter-fileicon://<path>` (the file's icon; only icon images
+are served, never file contents). `alter.select(i)` / `alter.confirm(i)` work
+as on the switcher (confirm = open). The tag library adds two elements that
+consume this state (and no-op on the switcher page, so one script tag serves
+both):
+
+- `<al-search-field placeholder="Search">` — the query text with a blinking
+  caret. Parts: `field`, `placeholder`, `query`, `caret`.
+- `<al-search-list>` — the result rows; click = open. Parts: `scroll`, `row`,
+  `row-selected`, `icon`, `name`, `subtitle`, `empty`; custom properties
+  `--al-icon-size`, `--al-selection`, `--al-selection-fg`; `empty-text`
+  attribute sets the no-results label.
 
 ### Bundled themes
 
