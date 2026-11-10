@@ -1,0 +1,82 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Press Start 2P';
+    src: url('fonts/press-start-2p-400.woff2') format('woff2');
+    font-weight: 400;
+    font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 600px; font: 10px 'Press Start 2P', monospace; color: #33ff33; }
+
+  #crt {
+    position: relative; display: flex; flex-direction: column;
+    box-sizing: border-box; padding: 18px;
+    background: #0a0f0a; /* phosphor black */
+    border: 4px solid #2b2b2b;
+    box-shadow: inset 0 0 0 4px #000, inset 0 0 60px rgba(0, 0, 0, 0.9);
+  }
+  /* scanlines */
+  #crt::before {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 10;
+    background: repeating-linear-gradient(to bottom,
+      rgba(0, 0, 0, 0) 0px, rgba(0, 0, 0, 0) 2px,
+      rgba(0, 0, 0, 0.28) 3px, rgba(0, 0, 0, 0.28) 4px);
+  }
+  /* vignette */
+  #crt::after {
+    content: ''; position: absolute; inset: 0; pointer-events: none; z-index: 11;
+    background: radial-gradient(ellipse at center, rgba(0,0,0,0) 55%, rgba(0,0,0,0.45) 100%);
+  }
+
+  #header { flex: none; text-align: center; padding-bottom: 14px;
+            color: #33ff33; font-size: 14px; letter-spacing: 2px;
+            text-shadow: 0 0 8px rgba(51, 255, 51, 0.8); }
+  #header .coin { color: #ffb000; text-shadow: 0 0 8px rgba(255, 176, 0, 0.8); }
+
+  #prompt { flex: none; display: flex; align-items: center; gap: 10px;
+            padding-bottom: 12px; position: relative; z-index: 2; }
+  #prompt .ps1 { color: #ffb000; text-shadow: 0 0 8px rgba(255, 176, 0, 0.9); }
+  al-search-field { flex: 1; min-width: 0; font-size: 11px; letter-spacing: 1px;
+                    text-shadow: 0 0 6px rgba(51, 255, 51, 0.6); }
+  al-search-field::part(placeholder) { color: #1e9e1e; }
+  al-search-field::part(caret) { width: 8px; height: 12px; background: #33ff33;
+                                 box-shadow: 0 0 8px rgba(51, 255, 51, 0.9); }
+
+  al-search-list { display: block; max-height: 280px; position: relative; z-index: 2;
+                   color: #33ff33; --al-icon-size: 26px; }
+  al-search-list::part(scroll) { padding: 4px; }
+  al-search-list::part(row) { border-radius: 0; padding: 8px 6px; }
+  al-search-list::part(row-selected) { background: rgba(51, 255, 51, 0.10);
+                                       outline: 2px solid rgba(51, 255, 51, 0.55); }
+  al-search-list::part(name) { text-shadow: 0 0 6px rgba(51, 255, 51, 0.6);
+                               text-transform: uppercase; font-weight: 400; }
+  al-search-list::part(subtitle) { color: #1e9e1e; text-transform: uppercase; }
+  al-search-list::part(empty) { color: #1e9e1e; text-transform: uppercase; }
+  al-search-list::part(icon) { image-rendering: pixelated; }
+
+  #footer { flex: none; text-align: center; padding-top: 14px; color: #33ff33;
+            font-size: 9px; text-shadow: 0 0 6px rgba(51, 255, 51, 0.7);
+            position: relative; z-index: 2; }
+  .blink { animation: blink 1.2s steps(1) infinite; }
+  @keyframes blink { 50% { opacity: 0; } }
+</style>
+</head>
+<body>
+<div id="crt">
+  <div id="header">FIND FILE <span class="coin">★</span></div>
+  <div id="prompt">
+    <span class="ps1">&gt;</span>
+    <al-search-field placeholder="TYPE TO SEARCH"></al-search-field>
+  </div>
+  <al-search-list empty-text="· GAME OVER — NO RESULTS ·"></al-search-list>
+  <div id="footer"><span class="blink">▲▼ MOVE&nbsp;&nbsp;⏎ OPEN&nbsp;&nbsp;ESC QUIT</span></div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

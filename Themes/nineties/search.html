@@ -1,0 +1,104 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Silkscreen';
+    src: url('fonts/silkscreen-400.woff2') format('woff2');
+    font-weight: 400; font-display: block;
+  }
+  @font-face {
+    font-family: 'Silkscreen';
+    src: url('fonts/silkscreen-700.woff2') format('woff2');
+    font-weight: 700; font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 560px; font-family: 'Silkscreen', monospace; font-size: 13px; color: #000; }
+
+  /* Win95 raised panel */
+  #win {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    background: #c0c0c0; padding: 2px;
+    border-top: 2px solid #dfdfdf; border-left: 2px solid #dfdfdf;
+    border-bottom: 2px solid #0a0a0a; border-right: 2px solid #0a0a0a;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #ffffff;
+  }
+
+  /* title bar */
+  #titlebar {
+    flex: none; display: flex; align-items: center; gap: 6px;
+    padding: 3px 4px 3px 6px; margin: 1px;
+    background: linear-gradient(90deg, #000080, #1084d0);
+    color: #fff; font-weight: 700; font-size: 12px; letter-spacing: 0.5px;
+  }
+  #titlebar .caption { flex: 1; white-space: nowrap; overflow: hidden; }
+  .tbtn {
+    flex: none; width: 16px; height: 14px; background: #c0c0c0; color: #000;
+    font-size: 10px; line-height: 12px; text-align: center; font-weight: 700;
+    border-top: 1px solid #fff; border-left: 1px solid #fff;
+    border-bottom: 1px solid #0a0a0a; border-right: 1px solid #0a0a0a;
+    box-shadow: inset -1px -1px 0 #808080, inset 1px 1px 0 #dfdfdf;
+  }
+
+  /* menu bar (decorative) */
+  #menubar { flex: none; display: flex; gap: 14px; padding: 4px 8px; font-size: 12px; }
+  #menubar span u { text-decoration: underline; }
+
+  /* sunken input field */
+  #fieldrow { flex: none; display: flex; align-items: center; gap: 8px;
+              margin: 2px 4px; padding: 4px 6px; }
+  #fieldrow .label { font-size: 12px; }
+  al-search-field {
+    flex: 1; min-width: 0; padding: 3px 4px; font-size: 13px; background: #ffffff;
+    border-top: 2px solid #404040; border-left: 2px solid #404040;
+    border-bottom: 2px solid #ffffff; border-right: 2px solid #ffffff;
+    box-shadow: inset -1px -1px 0 #dfdfdf, inset 1px 1px 0 #808080;
+  }
+
+  /* inset listbox */
+  al-search-list {
+    display: block; max-height: 260px; margin: 2px 4px; color: #000;
+    background: #ffffff; --al-icon-size: 22px;
+    border-top: 2px solid #404040; border-left: 2px solid #404040;
+    border-bottom: 2px solid #ffffff; border-right: 2px solid #ffffff;
+    box-shadow: inset -1px -1px 0 #dfdfdf, inset 1px 1px 0 #808080;
+  }
+  al-search-list::part(scroll) { padding: 2px; }
+  al-search-list::part(row) { border-radius: 0; padding: 3px 6px; }
+  al-search-list::part(row-selected) { background: #000080; color: #fff; }
+  al-search-list::part(name) { font-weight: 700; }
+  al-search-list::part(icon) { image-rendering: pixelated; }
+
+  /* status bar */
+  #status { flex: none; display: flex; gap: 4px; padding: 2px 4px 3px; }
+  .field {
+    padding: 2px 8px; font-size: 11px;
+    border-top: 1px solid #808080; border-left: 1px solid #808080;
+    border-bottom: 1px solid #ffffff; border-right: 1px solid #ffffff;
+  }
+  .field.grow { flex: 1; }
+</style>
+</head>
+<body>
+<div id="win">
+  <div id="titlebar">
+    <span class="caption">Alter — Find</span>
+    <span class="tbtn">_</span><span class="tbtn">□</span><span class="tbtn">✕</span>
+  </div>
+  <div id="menubar"><span><u>F</u>ile</span><span><u>E</u>dit</span><span><u>S</u>earch</span><span><u>H</u>elp</span></div>
+  <div id="fieldrow">
+    <span class="label">Find:</span>
+    <al-search-field placeholder="Type here…"></al-search-field>
+  </div>
+  <al-search-list empty-text="No items found"></al-search-list>
+  <div id="status">
+    <span class="field grow">⏎ Open&ensp;·&ensp;⌘⏎ Reveal&ensp;·&ensp;esc Close</span>
+    <span class="field">Ready</span>
+  </div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

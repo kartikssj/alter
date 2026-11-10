@@ -25,6 +25,10 @@ final class SettingsStore {
         var backtickHint: String {
             self == .option ? "\u{2325}`" : "\u{2318}`"
         }
+
+        var spaceHint: String {
+            self == .option ? "\u{2325}Space" : "\u{2318}Space"
+        }
     }
 
     enum WindowScope: String, CaseIterable, Identifiable {
@@ -82,8 +86,18 @@ final class SettingsStore {
     /// Selected HTML/JS theme folder name; nil = built-in SwiftUI UI (the
     /// default — theming is strictly opt-in).
     private(set) var themeID: String?
+    /// Spotlight-style search (Trigger+Space), on by default.
+    private(set) var searchEnabled: Bool
+    private(set) var searchTriggerModifier: TriggerModifier
+    /// Which categories appear in search results; all on by default.
+    private(set) var searchShowApplications: Bool
+    private(set) var searchShowFolders: Bool
+    private(set) var searchShowFiles: Bool
     var onTriggerModifierChange: ((TriggerModifier) -> Void)?
     var onThemeChange: ((String?) -> Void)?
+    /// Fired when any search setting changes so the coordinator can re-apply
+    /// them to the hotkey monitor / results provider live.
+    var onSearchSettingsChange: (() -> Void)?
 
     init() {
         let defaults = UserDefaults.standard
@@ -93,6 +107,11 @@ final class SettingsStore {
         showWindowPreviews = defaults.object(forKey: Self.showWindowPreviewsKey) as? Bool ?? true
         previewSize = PreviewSize(rawValue: defaults.string(forKey: Self.previewSizeKey) ?? "") ?? .small
         themeID = defaults.string(forKey: Self.themeIDKey)
+        searchEnabled = defaults.object(forKey: Self.searchEnabledKey) as? Bool ?? true
+        searchTriggerModifier = TriggerModifier(rawValue: defaults.string(forKey: Self.searchTriggerModifierKey) ?? "") ?? .option
+        searchShowApplications = defaults.object(forKey: Self.searchShowApplicationsKey) as? Bool ?? true
+        searchShowFolders = defaults.object(forKey: Self.searchShowFoldersKey) as? Bool ?? true
+        searchShowFiles = defaults.object(forKey: Self.searchShowFilesKey) as? Bool ?? true
         // Development override: ALTER_THEME=example picks a theme without
         // touching persisted settings (pair with ALTER_THEMES_DIR).
         if let devTheme = ProcessInfo.processInfo.environment["ALTER_THEME"], !devTheme.isEmpty {
@@ -138,10 +157,55 @@ final class SettingsStore {
         onThemeChange?(id)
     }
 
+    func setSearchEnabled(_ value: Bool) {
+        guard value != searchEnabled else { return }
+        searchEnabled = value
+        UserDefaults.standard.set(value, forKey: Self.searchEnabledKey)
+        onSearchSettingsChange?()
+    }
+
+    func setSearchTriggerModifier(_ value: TriggerModifier) {
+        guard value != searchTriggerModifier else { return }
+        searchTriggerModifier = value
+        UserDefaults.standard.set(value.rawValue, forKey: Self.searchTriggerModifierKey)
+        onSearchSettingsChange?()
+    }
+
+    func setSearchShowApplications(_ value: Bool) {
+        guard value != searchShowApplications else { return }
+        searchShowApplications = value
+        UserDefaults.standard.set(value, forKey: Self.searchShowApplicationsKey)
+        onSearchSettingsChange?()
+    }
+
+    func setSearchShowFolders(_ value: Bool) {
+        guard value != searchShowFolders else { return }
+        searchShowFolders = value
+        UserDefaults.standard.set(value, forKey: Self.searchShowFoldersKey)
+        onSearchSettingsChange?()
+    }
+
+    func setSearchShowFiles(_ value: Bool) {
+        guard value != searchShowFiles else { return }
+        searchShowFiles = value
+        UserDefaults.standard.set(value, forKey: Self.searchShowFilesKey)
+        onSearchSettingsChange?()
+    }
+
+    /// Convenience aggregate for the results provider.
+    var searchCategories: SearchCategories {
+        SearchCategories(applications: searchShowApplications, folders: searchShowFolders, files: searchShowFiles)
+    }
+
     private static let triggerModifierKey = "triggerModifier"
     private static let windowScopeKey = "windowScope"
     private static let frontAppScopeKey = "frontAppScope"
     private static let showWindowPreviewsKey = "showWindowPreviews"
     private static let previewSizeKey = "previewSize"
     private static let themeIDKey = "themeID"
+    private static let searchEnabledKey = "searchEnabled"
+    private static let searchTriggerModifierKey = "searchTriggerModifier"
+    private static let searchShowApplicationsKey = "searchShowApplications"
+    private static let searchShowFoldersKey = "searchShowFolders"
+    private static let searchShowFilesKey = "searchShowFiles"
 }

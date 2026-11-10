@@ -1,0 +1,94 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Orbitron';
+    src: url('fonts/orbitron-700.woff2') format('woff2');
+    font-weight: 700; font-display: block;
+  }
+  @font-face {
+    font-family: 'Rajdhani';
+    src: url('fonts/rajdhani-500.woff2') format('woff2');
+    font-weight: 500; font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 620px; font-family: 'Rajdhani', sans-serif; color: #b8feff; }
+
+  #hud {
+    position: relative; display: flex; flex-direction: column;
+    box-sizing: border-box; padding: 14px 18px;
+    background:
+      linear-gradient(rgba(0, 255, 255, 0.045) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 255, 255, 0.045) 1px, transparent 1px),
+      rgba(5, 5, 16, 0.94);
+    background-size: 28px 28px, 28px 28px, auto;
+    border: 1px solid rgba(0, 255, 255, 0.5);
+    clip-path: polygon(18px 0, 100% 0, 100% calc(100% - 18px), calc(100% - 18px) 100%, 0 100%, 0 18px);
+    box-shadow: 0 0 24px rgba(0, 255, 255, 0.25), inset 0 0 40px rgba(0, 255, 255, 0.05);
+  }
+
+  /* slow scanline sweep */
+  #hud::after {
+    content: ''; position: absolute; left: 0; right: 0; height: 60px; z-index: 5;
+    background: linear-gradient(to bottom, transparent, rgba(0, 255, 255, 0.07), transparent);
+    animation: sweep 4.5s linear infinite; pointer-events: none;
+  }
+  @keyframes sweep { from { top: -60px; } to { top: 100%; } }
+
+  #header { flex: none; display: flex; justify-content: space-between; align-items: baseline;
+            padding-bottom: 10px; border-bottom: 1px solid rgba(0, 255, 255, 0.35);
+            margin-bottom: 8px; }
+  #header .sys { font-family: 'Orbitron', sans-serif; font-size: 13px; letter-spacing: 3px;
+                 color: #00ffff; text-shadow: 0 0 10px rgba(0, 255, 255, 0.8); }
+  #header .sys b { color: #ff00c8; text-shadow: 0 0 10px rgba(255, 0, 200, 0.8); font-weight: 700; }
+  #header .meta { font-size: 12px; letter-spacing: 1px; color: #4d8a8f; }
+
+  #queryrow { flex: none; display: flex; align-items: center; gap: 10px;
+              padding: 4px 4px 10px; }
+  #queryrow .chev { font-family: 'Orbitron', sans-serif; color: #ff00c8;
+                    text-shadow: 0 0 8px rgba(255, 0, 200, 0.8); }
+  al-search-field { flex: 1; min-width: 0; font-size: 17px; letter-spacing: 1px; }
+  al-search-field::part(placeholder) { color: #2a4a4f; letter-spacing: 2px; }
+  al-search-field::part(caret) { background: #00ffff; box-shadow: 0 0 8px rgba(0, 255, 255, 0.9); }
+
+  al-search-list { display: block; max-height: 300px; color: #b8feff; --al-icon-size: 28px; }
+  al-search-list::part(scroll) { padding: 2px 4px; }
+  al-search-list::part(row) { border-radius: 0; border-left: 3px solid transparent;
+                              padding: 6px 10px;
+                              transition: transform 0.08s ease-out, background 0.08s ease-out; }
+  al-search-list::part(row-selected) {
+    background: linear-gradient(90deg, rgba(0, 255, 255, 0.14), rgba(0, 255, 255, 0.02) 70%, transparent);
+    border-left-color: #00ffff; transform: translateX(6px);
+  }
+  al-search-list::part(name) { font-family: 'Orbitron', sans-serif; font-weight: 700;
+                               font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; }
+  al-search-list::part(row-selected) { color: #b8feff; }
+  al-search-list::part(subtitle) { color: #5ea8ad; letter-spacing: 0.5px; }
+  al-search-list::part(empty) { color: #4d8a8f; letter-spacing: 2px; text-transform: uppercase; }
+  al-search-list::part(icon) { filter: drop-shadow(0 0 4px rgba(0, 255, 255, 0.35)); }
+
+  #footer { flex: none; display: flex; justify-content: space-between; padding-top: 8px;
+            border-top: 1px solid rgba(0, 255, 255, 0.2); margin-top: 8px;
+            font-size: 11px; letter-spacing: 1px; color: #4d8a8f; }
+</style>
+</head>
+<body>
+<div id="hud">
+  <div id="header">
+    <span class="sys">SYS<b>://</b>QUERY</span>
+    <span class="meta">MODE: SEARCH</span>
+  </div>
+  <div id="queryrow">
+    <span class="chev">▸</span>
+    <al-search-field placeholder="ENTER QUERY"></al-search-field>
+  </div>
+  <al-search-list empty-text="— NULL SET —"></al-search-list>
+  <div id="footer"><span>[⏎] ENGAGE&nbsp;&nbsp;[ESC] ABORT</span><span>⌘⏎ LOCATE</span></div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

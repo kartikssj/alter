@@ -1,0 +1,91 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Audiowide';
+    src: url('fonts/audiowide-400.woff2') format('woff2');
+    font-weight: 400; font-display: block;
+  }
+  @font-face {
+    font-family: 'Titillium Web';
+    src: url('fonts/titillium-web-400.woff2') format('woff2');
+    font-weight: 400; font-style: normal; font-display: block;
+  }
+  @font-face {
+    font-family: 'Titillium Web';
+    src: url('fonts/titillium-web-400-italic.woff2') format('woff2');
+    font-weight: 400; font-style: italic; font-display: block;
+  }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 620px; font-family: 'Titillium Web', sans-serif; color: #d8d8d8; }
+
+  #cockpit {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    padding: 12px 16px 0;
+    background:
+      repeating-linear-gradient(45deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 6px),
+      repeating-linear-gradient(-45deg, rgba(255,255,255,0.025) 0 2px, transparent 2px 6px),
+      #181818;
+    border: 1px solid #333;
+    border-top: 3px solid #d3202f;
+    border-radius: 8px;
+    box-shadow: 0 14px 44px rgba(0, 0, 0, 0.7);
+  }
+
+  #header { flex: none; display: flex; justify-content: space-between; align-items: baseline;
+            padding-bottom: 8px; border-bottom: 1px solid #333; margin-bottom: 8px; }
+  #header .title { font-family: 'Audiowide', sans-serif; font-size: 15px;
+                   text-transform: uppercase; letter-spacing: 2px; color: #f0f0f0;
+                   transform: skewX(-6deg); }
+  #header .title b { color: #d3202f; font-weight: 400; }
+  #header .lap { font-size: 11px; color: #777; letter-spacing: 1px; }
+
+  #queryrow { flex: none; display: flex; align-items: center; gap: 10px;
+              padding: 4px 4px 10px; }
+  #queryrow .flag { font-size: 14px; }
+  al-search-field { flex: 1; min-width: 0; font-size: 17px; }
+  al-search-field::part(placeholder) { color: #666; font-style: italic; }
+  al-search-field::part(caret) { background: #d3202f; width: 3px; }
+
+  al-search-list { display: block; max-height: 300px; color: #d8d8d8; --al-icon-size: 26px; }
+  al-search-list::part(scroll) { padding: 2px 4px; }
+  /* lean the row, not the content */
+  al-search-list::part(row) { border-radius: 0; padding: 5px 10px; margin-bottom: 2px;
+                              transform: skewX(-6deg);
+                              transition: transform 0.08s ease-out, background 0.08s ease-out; }
+  al-search-list::part(row-selected) {
+    background: linear-gradient(90deg, #d3202f, #a01522 70%, transparent);
+    transform: skewX(-6deg) translateX(8px); color: #fff;
+    box-shadow: 0 0 16px rgba(211, 32, 47, 0.45);
+  }
+  al-search-list::part(name) { font-family: 'Audiowide', sans-serif; font-size: 12px;
+                               text-transform: uppercase; letter-spacing: 1px; font-weight: 400; }
+  al-search-list::part(subtitle) { font-style: italic; font-size: 12px; color: #888; }
+  al-search-list::part(empty) { font-style: italic; color: #777; }
+
+  /* checkered flag strip */
+  #strip { flex: none; height: 14px; margin: 10px -16px 0;
+           background: repeating-conic-gradient(#e8e8e8 0% 25%, #111 0% 50%);
+           background-size: 14px 28px; }
+</style>
+</head>
+<body>
+<div id="cockpit">
+  <div id="header">
+    <span class="title">ALTER<b>GP</b> — SCOUT</span>
+    <span class="lap">TRACK RADAR</span>
+  </div>
+  <div id="queryrow">
+    <span class="flag">🏁</span>
+    <al-search-field placeholder="find on the grid…"></al-search-field>
+  </div>
+  <al-search-list empty-text="off track — no results"></al-search-list>
+  <div id="strip"></div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

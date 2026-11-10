@@ -1,0 +1,88 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+  @font-face {
+    font-family: 'Fredoka';
+    src: url('fonts/fredoka.woff2') format('woff2');
+    font-weight: 300 700; /* variable font */
+    font-display: block;
+  }
+  @font-face {
+    font-family: 'Quicksand';
+    src: url('fonts/quicksand.woff2') format('woff2');
+    font-weight: 300 700; /* variable font */
+    font-display: block;
+  }
+
+  @property --angle { syntax: '<angle>'; initial-value: 0deg; inherits: false; }
+
+  html, body { margin: 0; background: transparent; }
+  body { width: 600px; font-family: 'Quicksand', sans-serif; color: #e8e6f0; }
+
+  /* animated rainbow ring around the whole card */
+  #ring {
+    box-sizing: border-box; padding: 3px; border-radius: 18px;
+    background: conic-gradient(from var(--angle),
+      #ff004c, #ff8a00, #ffee00, #33cc55, #00c8ff, #7a5cff, #ff4fd8, #ff004c);
+    animation: spin 8s linear infinite;
+  }
+  @keyframes spin { to { --angle: 360deg; } }
+
+  #card {
+    display: flex; flex-direction: column; box-sizing: border-box;
+    padding: 12px 16px 10px; background: rgba(18, 16, 24, 0.96); border-radius: 15px;
+  }
+
+  #header { flex: none; text-align: center; padding-bottom: 10px; }
+  #header .title {
+    font-family: 'Fredoka', sans-serif; font-weight: 600; font-size: 17px; letter-spacing: 3px;
+    background: linear-gradient(90deg, #ff004c, #ff8a00, #ffee00, #33cc55, #00c8ff, #7a5cff, #ff4fd8, #ff004c);
+    background-size: 300% 100%;
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+    animation: slide 6s linear infinite;
+  }
+  @keyframes slide { to { background-position: 300% 0; } }
+
+  #queryrow { flex: none; display: flex; align-items: center; gap: 10px;
+              padding: 2px 10px 8px; }
+  #queryrow .sparkle { font-size: 14px; }
+  al-search-field { flex: 1; min-width: 0; font-size: 17px; font-weight: 600; }
+  al-search-field::part(placeholder) { color: #5e5878; font-weight: 400; }
+  al-search-field::part(caret) { background: #00c8ff; }
+
+  al-search-list { display: block; max-height: 300px; color: #e8e6f0; --al-icon-size: 26px; }
+  al-search-list::part(scroll) { padding: 2px; }
+  al-search-list::part(row) { border-radius: 10px; margin-bottom: 3px; padding: 6px 10px;
+                              border-left: 4px solid #555; background: rgba(255, 255, 255, 0.04); }
+  al-search-list::part(row-selected) {
+    border-left-color: #fff; color: #fff;
+    background: linear-gradient(90deg, #ff004c, #ff8a00, #ffee00, #33cc55, #00c8ff, #7a5cff);
+    background-size: 300% 100%;
+    animation: slide 6s linear infinite;
+  }
+  al-search-list::part(name) { font-family: 'Fredoka', sans-serif; font-weight: 500; font-size: 14px; }
+  al-search-list::part(subtitle) { font-size: 11px; color: #9a94b0; }
+  al-search-list::part(empty) { color: #9a94b0; }
+
+  #footer { flex: none; text-align: center; padding-top: 8px; font-size: 10px;
+            color: #9a94b0; letter-spacing: 2px; }
+</style>
+</head>
+<body>
+<div id="ring">
+  <div id="card">
+    <div id="header"><div class="title">S E A R C H</div></div>
+    <div id="queryrow">
+      <span class="sparkle">✨</span>
+      <al-search-field placeholder="find your pot of gold…"></al-search-field>
+    </div>
+    <al-search-list empty-text="no rainbows today"></al-search-list>
+    <div id="footer">catch it with ⏎ 🌈</div>
+  </div>
+</div>
+<script src="alter-lib://alter-elements.js"></script>
+<script>if (window.alter && window.alter.autoResize) window.alter.autoResize();</script>
+</body>
+</html>

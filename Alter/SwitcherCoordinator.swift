@@ -9,6 +9,9 @@ final class SwitcherCoordinator {
     private let viewModel = SwitcherViewModel()
     private let thumbnailer = WindowThumbnailer()
     private let settings: SettingsStore
+    /// Spotlight-style search (Trigger+Space, sticky panel). Shares the hotkey
+    /// monitor; visibility changes keep the monitor's key routing in sync.
+    private let search = SearchCoordinator()
 
     init(settings: SettingsStore) {
         self.settings = settings
@@ -36,6 +39,13 @@ final class SwitcherCoordinator {
         hotkeys.triggerModifier = settings.triggerModifier.eventMask
         settings.onTriggerModifierChange = { [weak self] modifier in
             self?.hotkeys.triggerModifier = modifier.eventMask
+        }
+        applySearchSettings()
+        settings.onSearchSettingsChange = { [weak self] in
+            self?.applySearchSettings()
+        }
+        search.onVisibilityChange = { [weak self] visible in
+            self?.hotkeys.isSearchVisible = visible
         }
         settings.onThemeChange = { [weak self] _ in
             self?.rebuildThemedPanel()
@@ -75,8 +85,26 @@ final class SwitcherCoordinator {
 
     // MARK: - Hotkey actions
 
+    /// Applies the search settings to the hotkey monitor live; disabling
+    /// search while its panel is open dismisses it.
+    private func applySearchSettings() {
+        hotkeys.searchEnabled = settings.searchEnabled
+        hotkeys.searchTriggerModifier = settings.searchTriggerModifier.eventMask
+        search.applyCategories(settings.searchCategories)
+        if !settings.searchEnabled {
+            search.dismiss()
+        }
+    }
+
     private func handle(_ action: HotkeyMonitor.Action) {
         switch action {
+        case .searchToggle:
+            // Opening search replaces the switcher (the modifier is likely
+            // still held, so dismiss() first to cancel release-to-confirm).
+            if isVisible { dismiss() }
+            search.toggle()
+        case .searchKey(let text, let keyCode, let command):
+            search.handleKey(text: text, keyCode: keyCode, command: command)
         case .cycleForward, .cycleBackward:
             if isVisible {
                 viewModel.moveSelection(by: action == .cycleForward ? 1 : -1)
@@ -106,12 +134,15 @@ final class SwitcherCoordinator {
 
     /// (Re)creates the pre-warmed themed panel for the current setting; nil
     /// setting or an invalid theme means the built-in UI. Called at start and
-    /// on every settings change, so theme edits apply live.
+    /// on every settings change, so theme edits apply live. The themed search
+    /// panel follows the same selection (falls back to native search when the
+    /// theme has no search.html).
     private func rebuildThemedPanel() {
         themedPanel = nil
         themeFailed = false
-        guard let themeID = settings.themeID,
-              let theme = ThemeStore.shared.theme(withID: themeID) else { return }
+        let theme = settings.themeID.flatMap { ThemeStore.shared.theme(withID: $0) }
+        search.rebuildThemedPanel(theme: theme)
+        guard let theme else { return }
         let panel = ThemedSwitcherPanel(theme: theme, viewModel: viewModel, thumbnailer: thumbnailer)
         panel.onSelect = { [weak self] index in
             self?.viewModel.selectedIndex = index
@@ -151,6 +182,7 @@ final class SwitcherCoordinator {
         // so the user can switch back to them.
         var excludedIDs = panel.panelWindowIDs
         if let themedPanel { excludedIDs.insert(themedPanel.windowID) }
+        excludedIDs.formUnion(search.windowIDs)
         let entries = catalog.currentWindows(
             frontAppScope: mode == .frontApp ? settings.frontAppScope : nil,
             limitTo: screen,
