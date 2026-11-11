@@ -279,12 +279,12 @@
       this._query = document.createElement('span');
       this._query.className = 'query';
       this._query.setAttribute('part', 'query');
-      var caret = document.createElement('span');
-      caret.className = 'caret';
-      caret.setAttribute('part', 'caret');
+      this._caret = document.createElement('span');
+      this._caret.className = 'caret';
+      this._caret.setAttribute('part', 'caret');
       this._field.appendChild(this._placeholder);
       this._field.appendChild(this._query);
-      this._field.appendChild(caret);
+      this._field.appendChild(this._caret);
       root.appendChild(style);
       root.appendChild(this._field);
     }
@@ -299,7 +299,15 @@
       if (!s.results) return; // window-shaped state — not our page
       var q = s.query || '';
       this._query.textContent = q;
-      this._placeholder.style.display = q ? 'none' : '';
+      if (q) {
+        this._placeholder.style.display = 'none';
+        // caret last: insertion point after the query text
+        this._field.appendChild(this._caret);
+      } else {
+        this._placeholder.style.display = '';
+        // caret first: before the placeholder, not after it
+        this._field.insertBefore(this._caret, this._placeholder);
+      }
     }
   }
 
