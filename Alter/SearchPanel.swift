@@ -117,13 +117,17 @@ struct SearchView: View {
             Image(systemName: "magnifyingglass")
                 .font(.system(size: 20, weight: .medium))
                 .foregroundStyle(.secondary)
-            ZStack(alignment: .leading) {
+            // No ZStack overlay: the caret is an explicit inline element so
+            // its position is deterministic — before the placeholder when
+            // empty (Spotlight behavior), after the query when typing. (The
+            // overlay version rendered it at the placeholder's trailing edge.)
+            HStack(spacing: 0) {
                 if viewModel.query.isEmpty {
+                    caret
                     Text("Search apps, folders and files")
                         .font(.system(size: 22, weight: .light))
                         .foregroundStyle(.tertiary)
-                }
-                HStack(spacing: 0) {
+                } else {
                     Text(viewModel.query)
                         .font(.system(size: 22, weight: .light))
                         .lineLimit(1)
