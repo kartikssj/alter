@@ -93,8 +93,9 @@ Themes/my-theme/
 
 With `"size": "auto"`, call `alter.autoResize()` once and the panel fits
 itself to your content; otherwise the manifest size (or the `alter.resize(w,
-h)` message) drives the panel size. Themed mode shows on the pointer's
-display only (the built-in UI keeps its per-display clones).
+h)` message) drives the panel size. Themed panels appear on every display —
+one webview per screen, kept in sync (with "Active display only" scope, just
+the pointer's display).
 
 ### The bridge
 

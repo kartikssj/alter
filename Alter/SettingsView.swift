@@ -67,7 +67,7 @@ private struct GeneralSettingsTab: View {
                 Button("Reveal Themes Folder…") {
                     ThemeStore.shared.revealInFinder()
                 }
-                Text("Custom themes are HTML/CSS/JS bundles (an index.html plus a theme.json manifest) that render the switcher. Themed mode shows on the pointer's display only.")
+                Text("Custom themes are HTML/CSS/JS bundles (an index.html plus a theme.json manifest) that render the switcher; themes shipping a search.html style the search panel too. Themed panels appear on every display, in sync.")
                     .font(.callout)
                     .foregroundStyle(.secondary)
             }

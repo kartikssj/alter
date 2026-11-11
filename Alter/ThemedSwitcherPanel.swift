@@ -1,12 +1,12 @@
 import AppKit
 import WebKit
 
-/// The themed switcher: ONE pre-warmed, non-activating NSPanel hosting a
-/// locked-down WKWebView that renders the user's HTML/JS theme. Unlike the
-/// native panel set there is exactly one instance, created when the theme is
-/// selected (so the WebContent cold start never hits summon latency) and
-/// reused across shows; it appears on the pointer's screen only (one webview;
-/// native panels keep per-screen clones).
+/// The themed switcher: a pre-warmed, non-activating NSPanel hosting a
+/// locked-down WKWebView that renders the user's HTML/JS theme. One instance
+/// per connected screen (managed by ThemedSwitcherPanelController, mirroring
+/// the native SwitcherPanelController), created when the theme is selected
+/// (so the WebContent cold start never hits summon latency) and reused across
+/// shows.
 ///
 /// Invariants carried over from SwitcherPanel: borderless +
 /// .nonactivatingPanel + floating + canJoinAllSpaces; all keyboard input stays

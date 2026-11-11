@@ -24,9 +24,11 @@ final class SwitcherCoordinator {
     }()
 
     /// Themed (WKWebView) UI: created only when a theme is selected in
-    /// Settings (opt-in). `themeFailed` latches on a theme JS error/crash and
-    /// routes shows to the built-in UI until the theme selection changes.
-    private var themedPanel: ThemedSwitcherPanel?
+    /// Settings (opt-in). One webview-backed panel per screen, all in sync
+    /// via the shared view model. `themeFailed` latches on a theme JS
+    /// error/crash and routes shows to the built-in UI until the theme
+    /// selection changes.
+    private var themedPanels: ThemedSwitcherPanelController?
     private var themeFailed = false
 
     private var permissionTimer: Timer?
@@ -129,7 +131,7 @@ final class SwitcherCoordinator {
     // MARK: - Themed (WKWebView) UI
 
     private var usingTheme: Bool {
-        themedPanel != nil && !themeFailed
+        themedPanels != nil && !themeFailed
     }
 
     /// (Re)creates the pre-warmed themed panel for the current setting; nil
@@ -138,24 +140,24 @@ final class SwitcherCoordinator {
     /// panel follows the same selection (falls back to native search when the
     /// theme has no search.html).
     private func rebuildThemedPanel() {
-        themedPanel = nil
+        themedPanels = nil
         themeFailed = false
         let theme = settings.themeID.flatMap { ThemeStore.shared.theme(withID: $0) }
         search.rebuildThemedPanel(theme: theme)
         guard let theme else { return }
-        let panel = ThemedSwitcherPanel(theme: theme, viewModel: viewModel, thumbnailer: thumbnailer)
-        panel.onSelect = { [weak self] index in
+        let controller = ThemedSwitcherPanelController(theme: theme, viewModel: viewModel, thumbnailer: thumbnailer)
+        controller.onSelect = { [weak self] index in
             self?.viewModel.selectedIndex = index
         }
-        panel.onConfirm = { [weak self] index in
+        controller.onConfirm = { [weak self] index in
             guard let self else { return }
             self.viewModel.selectedIndex = index
             self.confirmSelection()
         }
-        panel.onError = { [weak self] message in
+        controller.onError = { [weak self] message in
             self?.handleThemeError(message)
         }
-        themedPanel = panel
+        themedPanels = controller
     }
 
     /// A theme that errors (JS exception or WebContent crash) is benched until
@@ -165,7 +167,7 @@ final class SwitcherCoordinator {
         themeFailed = true
         NSLog("Alter: theme error (%@) — falling back to built-in UI", message)
         guard isVisible else { return }
-        themedPanel?.hide()
+        themedPanels?.hide()
         if settings.windowScope == .activeDisplay, let screen = Self.pointerScreen() {
             panel.show(on: screen)
         } else {
@@ -174,18 +176,22 @@ final class SwitcherCoordinator {
     }
 
     private func show(mode: SwitcherViewModel.Mode) {
-        // Themed mode always shows on the pointer's screen (one webview only);
-        // native mode follows the window-scope setting.
-        let screen: NSScreen? = (usingTheme || settings.windowScope == .activeDisplay) ? Self.pointerScreen() : nil
+        // Panel placement and catalog scope are separate concerns, and BOTH
+        // now follow windowScope alone: "all displays" lists every display's
+        // windows and shows the switcher on every screen (native clones or
+        // per-screen themed webviews); "active display only" narrows both to
+        // the pointer's screen.
+        let catalogScreen: NSScreen? = settings.windowScope == .activeDisplay ? Self.pointerScreen() : nil
+        let panelScreen = catalogScreen
         // Exclude only the switcher panels themselves (by window ID) — Alter's
         // other windows (Settings, permission onboarding) are listed normally
         // so the user can switch back to them.
         var excludedIDs = panel.panelWindowIDs
-        if let themedPanel { excludedIDs.insert(themedPanel.windowID) }
+        if let themedPanels { excludedIDs.formUnion(themedPanels.windowIDs) }
         excludedIDs.formUnion(search.windowIDs)
         let entries = catalog.currentWindows(
             frontAppScope: mode == .frontApp ? settings.frontAppScope : nil,
-            limitTo: screen,
+            limitTo: catalogScreen,
             recency: recency,
             excludingWindowIDs: excludedIDs
         )
@@ -195,10 +201,14 @@ final class SwitcherCoordinator {
         viewModel.configure(windows: entries, mode: mode, showPreview: showPreview, previewPaneSize: previewSize)
         isVisible = true
         hotkeys.isSwitcherVisible = true
-        if usingTheme, let screen {
-            themedPanel?.show(on: screen)
-        } else if let screen {
-            panel.show(on: screen)
+        if usingTheme {
+            if let panelScreen {
+                themedPanels?.show(on: panelScreen)
+            } else {
+                themedPanels?.show()
+            }
+        } else if let panelScreen {
+            panel.show(on: panelScreen)
         } else {
             panel.show()
         }
@@ -243,7 +253,7 @@ final class SwitcherCoordinator {
         isVisible = false
         hotkeys.isSwitcherVisible = false
         panel.hide()
-        themedPanel?.hide()
+        themedPanels?.hide()
     }
 
     // MARK: - Permission onboarding
