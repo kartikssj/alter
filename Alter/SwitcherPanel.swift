@@ -194,7 +194,7 @@ struct SwitcherView: View {
         ScrollView {
             LazyVStack(spacing: 2) {
                 ForEach(Array(viewModel.windows.enumerated()), id: \.element.id) { index, entry in
-                    SwitcherRow(entry: entry, isSelected: index == viewModel.selectedIndex)
+                    SwitcherRow(entry: entry, isSelected: index == viewModel.selectedIndex, index: index)
                         .contentShape(Rectangle())
                         .onTapGesture { onRowClick(index) }
                 }
@@ -242,6 +242,9 @@ private struct PreviewPane: View {
 private struct SwitcherRow: View {
     let entry: WindowEntry
     let isSelected: Bool
+    /// 0-based row index; rows 1-9 get a keycap badge for the
+    /// trigger+digit quick-switch shortcut.
+    let index: Int
 
     var body: some View {
         HStack(spacing: 12) {
@@ -267,6 +270,17 @@ private struct SwitcherRow: View {
                 Image(systemName: "dock.rectangle")
                     .foregroundStyle(.secondary)
                     .help("Minimized")
+            }
+            if index < 9 {
+                Text(verbatim: "\(index + 1)")
+                    .font(.caption.monospacedDigit())
+                    .foregroundStyle(isSelected ? .white.opacity(0.85) : .secondary)
+                    .padding(.horizontal, 5)
+                    .padding(.vertical, 2)
+                    .background(
+                        (isSelected ? Color.white.opacity(0.18) : Color.primary.opacity(0.08)),
+                        in: RoundedRectangle(cornerRadius: 5, style: .continuous)
+                    )
             }
         }
         .padding(.horizontal, 10)

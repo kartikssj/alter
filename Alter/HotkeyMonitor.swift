@@ -17,6 +17,9 @@ final class HotkeyMonitor {
         /// printable keys, nil for the handled navigation/action keys
         /// (Escape/arrows/Return/Delete, identified by keyCode).
         case searchKey(text: String?, keyCode: Int, command: Bool)
+        /// Trigger + digit 1-9 pressed while the switcher is open: switch to
+        /// that row immediately (0-based index).
+        case jumpTo(Int)
     }
 
     /// Called on the main run loop (the tap is installed there).
@@ -154,7 +157,21 @@ final class HotkeyMonitor {
                     emit(.confirm)
                     return nil
                 default:
-                    break
+                    // Number-key quick switch: trigger + digit 1-9, and ONLY
+                    // the trigger — Shift is excluded so Cmd-Shift-3/4/5
+                    // (system screenshots) keep working with the switcher
+                    // open, and Control / the other trigger are never
+                    // swallowed (Invariant 1). First press confirms and closes
+                    // the switcher, so autorepeat falls through harmlessly.
+                    let otherTrigger: CGEventFlags = triggerModifier == .maskAlternate ? .maskCommand : .maskAlternate
+                    if flags.contains(triggerModifier),
+                       !flags.contains(otherTrigger),
+                       !flags.contains(.maskControl),
+                       !flags.contains(.maskShift),
+                       let index = Key.digits[keyCode] {
+                        emit(.jumpTo(index))
+                        return nil
+                    }
                 }
             }
         case .flagsChanged:
@@ -225,4 +242,17 @@ enum Key {
     static let forwardDelete = 117
     static let upArrow = 126
     static let downArrow = 125
+
+    /// Digit keys 1-9 -> 0-based row index (ANSI layout codes).
+    static let digits: [Int: Int] = [
+        18: 0, // 1
+        19: 1, // 2
+        20: 2, // 3
+        21: 3, // 4
+        23: 4, // 5
+        22: 5, // 6
+        26: 6, // 7
+        28: 7, // 8
+        25: 8, // 9
+    ]
 }
