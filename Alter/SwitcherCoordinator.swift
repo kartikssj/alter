@@ -107,6 +107,14 @@ final class SwitcherCoordinator {
             search.toggle()
         case .searchKey(let text, let keyCode, let command):
             search.handleKey(text: text, keyCode: keyCode, command: command)
+        case .jumpTo(let index):
+            // Number-key quick switch: select the row and confirm in one
+            // keystroke; the later modifier release is a no-op because the
+            // switcher is already dismissed.
+            if isVisible, viewModel.windows.indices.contains(index) {
+                viewModel.selectedIndex = index
+                confirmSelection()
+            }
         case .cycleForward, .cycleBackward:
             if isVisible {
                 viewModel.moveSelection(by: action == .cycleForward ? 1 : -1)

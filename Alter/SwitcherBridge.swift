@@ -93,6 +93,9 @@ final class SwitcherBridge: NSObject {
             [
                 "id": Int(entry.id),
                 "pid": Int(entry.pid),
+                // 0-based row index (the trigger+digit quick-switch number is
+                // index+1); themes may render it as a badge.
+                "index": index,
                 "appName": entry.appName,
                 "title": entry.title,
                 // Quartz coordinates (top-left origin), as reported by CGWindowList.
